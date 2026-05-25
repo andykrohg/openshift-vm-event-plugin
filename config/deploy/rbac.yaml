@@ -2,17 +2,17 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: vm-event-processor
-  namespace: vm-event-operator-system
+  name: vm-activity-processor
+  namespace: vm-activity-plugin
   labels:
-    app: vm-event-processor
+    app: vm-activity-processor
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: vm-event-processor
+  name: vm-activity-processor
   labels:
-    app: vm-event-processor
+    app: vm-activity-processor
 rules:
   # Watch Events across all namespaces
   - apiGroups: [""]
@@ -33,14 +33,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: vm-event-processor
+  name: vm-activity-processor
   labels:
-    app: vm-event-processor
+    app: vm-activity-processor
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: vm-event-processor
+  name: vm-activity-processor
 subjects:
   - kind: ServiceAccount
-    name: vm-event-processor
-    namespace: vm-event-operator-system
+    name: vm-activity-processor
+    namespace: vm-activity-plugin

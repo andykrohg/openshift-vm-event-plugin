@@ -32,11 +32,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/aggregator"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/api"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/storage"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/watcher"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/aggregator"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/api"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/audit"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/storage"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/watcher"
 )
 
 type Config struct {

@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: vm-event-operator-system
+namespace: vm-activity-plugin
 
 resources:
 - namespace/namespace.yaml
@@ -13,10 +13,4 @@ resources:
 - deploy/tls-proxy-config.yaml
 - console/plugin.yaml
 - samples/retention-cronjob.yaml
-
-# Container images
-images:
-- name: vm-event-processor
-  newName: quay.io/andy_krohg/openshift-vm-event-processor
-- name: vm-events-plugin
-  newName: quay.io/andy_krohg/openshift-vm-event-console-plugin
+- webhook/mutating-webhook.yaml

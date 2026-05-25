@@ -25,8 +25,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// VMEvent represents a VM event in the database
-type VMEvent struct {
+// VMActivity represents a VM event in the database
+type VMActivity struct {
 	ID              int64
 	EventUID        string
 	VMName          string
@@ -87,7 +87,7 @@ func NewRepository(connectionString string) (*Repository, error) {
 // InitializeSchema creates the database schema if it doesn't exist
 func (r *Repository) InitializeSchema(ctx context.Context) error {
 	query := `
-		CREATE TABLE IF NOT EXISTS vm_events (
+		CREATE TABLE IF NOT EXISTS vm_activity (
 			id BIGSERIAL PRIMARY KEY,
 			event_uid VARCHAR(36) UNIQUE NOT NULL,
 			vm_name VARCHAR(253) NOT NULL,
@@ -103,9 +103,9 @@ func (r *Repository) InitializeSchema(ctx context.Context) error {
 			created_at TIMESTAMPTZ DEFAULT NOW()
 		);
 
-		CREATE INDEX IF NOT EXISTS idx_vm_lookup ON vm_events(vm_namespace, vm_name, last_timestamp DESC);
-		CREATE INDEX IF NOT EXISTS idx_timestamp ON vm_events(last_timestamp DESC);
-		CREATE INDEX IF NOT EXISTS idx_retention ON vm_events(created_at);
+		CREATE INDEX IF NOT EXISTS idx_vm_lookup ON vm_activity(vm_namespace, vm_name, last_timestamp DESC);
+		CREATE INDEX IF NOT EXISTS idx_timestamp ON vm_activity(last_timestamp DESC);
+		CREATE INDEX IF NOT EXISTS idx_retention ON vm_activity(created_at);
 	`
 
 	_, err := r.pool.Exec(ctx, query)
@@ -113,7 +113,7 @@ func (r *Repository) InitializeSchema(ctx context.Context) error {
 }
 
 // InsertEvents inserts a batch of events into the database
-func (r *Repository) InsertEvents(ctx context.Context, events []VMEvent) error {
+func (r *Repository) InsertEvents(ctx context.Context, events []VMActivity) error {
 	if len(events) == 0 {
 		return nil
 	}
@@ -122,12 +122,12 @@ func (r *Repository) InsertEvents(ctx context.Context, events []VMEvent) error {
 
 	for _, event := range events {
 		batch.Queue(`
-			INSERT INTO vm_events (
+			INSERT INTO vm_activity (
 				event_uid, vm_name, vm_namespace, event_type, reason, message,
 				source_component, first_timestamp, last_timestamp, count, enrichment
 			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			ON CONFLICT (event_uid) DO UPDATE SET
-				count = vm_events.count + EXCLUDED.count,
+				count = vm_activity.count + EXCLUDED.count,
 				last_timestamp = EXCLUDED.last_timestamp,
 				message = EXCLUDED.message
 		`,
@@ -159,15 +159,15 @@ func (r *Repository) InsertEvents(ctx context.Context, events []VMEvent) error {
 }
 
 // QueryEvents retrieves events based on query options
-func (r *Repository) QueryEvents(ctx context.Context, opts QueryOptions) ([]VMEvent, int64, error) {
+func (r *Repository) QueryEvents(ctx context.Context, opts QueryOptions) ([]VMActivity, int64, error) {
 	// Build dynamic query
 	baseQuery := `
 		SELECT id, event_uid, vm_name, vm_namespace, event_type, reason, message,
 		       source_component, first_timestamp, last_timestamp, count, enrichment, created_at
-		FROM vm_events
+		FROM vm_activity
 		WHERE 1=1
 	`
-	countQuery := "SELECT COUNT(*) FROM vm_events WHERE 1=1"
+	countQuery := "SELECT COUNT(*) FROM vm_activity WHERE 1=1"
 
 	args := []interface{}{}
 	argIndex := 1
@@ -242,9 +242,9 @@ func (r *Repository) QueryEvents(ctx context.Context, opts QueryOptions) ([]VMEv
 	}
 	defer rows.Close()
 
-	events := []VMEvent{}
+	events := []VMActivity{}
 	for rows.Next() {
-		var event VMEvent
+		var event VMActivity
 		if err := rows.Scan(
 			&event.ID,
 			&event.EventUID,
@@ -275,7 +275,7 @@ func (r *Repository) QueryEvents(ctx context.Context, opts QueryOptions) ([]VMEv
 // DeleteOldEvents deletes events older than the specified retention period
 func (r *Repository) DeleteOldEvents(ctx context.Context, retentionDays int32) (int64, error) {
 	query := `
-		DELETE FROM vm_events
+		DELETE FROM vm_activity
 		WHERE created_at < NOW() - INTERVAL '1 day' * $1
 	`
 
@@ -294,7 +294,7 @@ func (r *Repository) GetStats(ctx context.Context) (totalEvents int64, oldestEve
 			COUNT(*) as total,
 			MIN(created_at) as oldest,
 			MAX(last_timestamp) as newest
-		FROM vm_events
+		FROM vm_activity
 	`
 
 	var oldest, newest *time.Time

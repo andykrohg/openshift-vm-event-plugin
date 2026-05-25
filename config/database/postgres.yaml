@@ -2,21 +2,21 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vm-event-db-secret
-  namespace: vm-event-operator-system
+  name: vm-activity-db-secret
+  namespace: vm-activity-plugin
 type: Opaque
 stringData:
-  username: vmevent
+  username: vmactivity
   password: changeme  # Change this in production!
-  database: vmevent
+  database: vmactivity
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: vm-event-db
-  namespace: vm-event-operator-system
+  name: vm-activity-db
+  namespace: vm-activity-plugin
   labels:
-    app: vm-event-db
+    app: vm-activity-db
 spec:
   type: ClusterIP
   ports:
@@ -25,25 +25,25 @@ spec:
       protocol: TCP
       name: postgres
   selector:
-    app: vm-event-db
+    app: vm-activity-db
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: vm-event-db
-  namespace: vm-event-operator-system
+  name: vm-activity-db
+  namespace: vm-activity-plugin
   labels:
-    app: vm-event-db
+    app: vm-activity-db
 spec:
-  serviceName: vm-event-db
+  serviceName: vm-activity-db
   replicas: 1
   selector:
     matchLabels:
-      app: vm-event-db
+      app: vm-activity-db
   template:
     metadata:
       labels:
-        app: vm-event-db
+        app: vm-activity-db
     spec:
       containers:
         - name: postgres
@@ -55,17 +55,17 @@ spec:
             - name: POSTGRESQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: vm-event-db-secret
+                  name: vm-activity-db-secret
                   key: username
             - name: POSTGRESQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: vm-event-db-secret
+                  name: vm-activity-db-secret
                   key: password
             - name: POSTGRESQL_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: vm-event-db-secret
+                  name: vm-activity-db-secret
                   key: database
           volumeMounts:
             - name: postgres-storage
@@ -82,7 +82,7 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - vmevent
+                - vmactivity
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
@@ -90,7 +90,7 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - vmevent
+                - vmactivity
             initialDelaySeconds: 5
             periodSeconds: 5
   volumeClaimTemplates:

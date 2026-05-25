@@ -1,4 +1,4 @@
-# OpenShift VM Event Plugin
+# OpenShift VM Activity Plugin
 
 Extended event history for OpenShift Virtualization VMs with a rich console UI.
 
@@ -28,7 +28,7 @@ Extended event history for OpenShift Virtualization VMs with a rich console UI.
 ## Project Structure
 
 ```
-openshift-vm-event-plugin/
+openshift-vm-activity-plugin/
 ├── processor/              # Go application
 │   ├── cmd/               # Main entrypoint
 │   ├── internal/          # Application logic
@@ -69,22 +69,16 @@ All container images use Red Hat Universal Base Images (UBI) and Red Hat certifi
 
 ## Quick Start
 
+**No cloning required!** Deploy directly from GitHub:
+
 ```bash
-# Clone the repository
-git clone https://github.com/andykrohg/openshift-vm-event-plugin.git
-cd openshift-vm-event-plugin
-
-# Build and push images (auto-detects podman or docker)
-make docker-build docker-push IMG=quay.io/youruser/vm-event-processor:latest
-make console-image-build console-image-push CONSOLE_IMG=quay.io/youruser/vm-events-plugin:latest
-
-# Deploy everything
-make deploy IMG=quay.io/youruser/vm-event-processor:latest CONSOLE_IMG=quay.io/youruser/vm-events-plugin:latest
+# Deploy everything (uses pre-built images)
+kubectl apply -k https://github.com/andykrohg/openshift-vm-activity-plugin/config
 
 # Enable console plugin
 kubectl patch consoles.operator.openshift.io cluster \
   --type=merge \
-  --patch '{"spec":{"plugins":["vm-events-plugin"]}}'
+  --patch '{"spec":{"plugins":["vm-activity-plugin"]}}'
 ```
 
 See [INSTALLATION.md](INSTALLATION.md) for detailed installation instructions.
@@ -97,7 +91,7 @@ All configuration is done via ConfigMap (`config/deploy/configmap.yaml`):
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vm-event-config
+  name: vm-activity-config
 data:
   RETENTION_DAYS: "30"                    # How long to keep events
   AGGREGATION_WINDOW_MINUTES: "5"        # Time window for deduplication
@@ -111,13 +105,13 @@ data:
 
 1. Navigate to Virtualization → VirtualMachines
 2. Click on a VirtualMachine
-3. Select the "Event History" tab
+3. Select the "Activity" tab
 
 ### Querying Events via API
 
 ```bash
 # Port-forward to the API service
-kubectl port-forward -n vm-event-operator-system svc/vm-events-api 8443:8443
+kubectl port-forward -n vm-activity-plugin svc/vm-activity-api 8443:8443
 
 # Query events for a specific VM
 curl -sk https://localhost:8443/api/v1/namespaces/default/virtualmachines/my-vm/events?since=24h
@@ -143,38 +137,35 @@ curl -sk "https://localhost:8443/api/v1/events/export?format=csv&namespace=defau
 
 ## Development
 
-### Building Components
+### Building Custom Images (Optional)
+
+Only needed if you're making code changes:
 
 ```bash
-# Build processor binary
-make build
+# Clone the repository
+git clone https://github.com/andykrohg/openshift-vm-activity-plugin.git
+cd openshift-vm-activity-plugin
 
-# Build processor container image
-# Full build in container (slower, reproducible)
-make docker-build IMG=quay.io/youruser/vm-event-processor:latest
-# OR: Build locally then containerize (faster)
-make image-local IMG=quay.io/youruser/vm-event-processor:latest
+# Build and push processor image (fastest - build locally + containerize + push)
+make image-local IMG=quay.io/youruser/vm-activity-processor:latest
 
-# Build console plugin (local development)
-make console-build
+# Build and push console plugin image (fastest)
+make console-image-local CONSOLE_IMG=quay.io/youruser/vm-activity-plugin:latest
 
-# Build console plugin container image
-# Full build in container
-make console-image-build CONSOLE_IMG=quay.io/youruser/vm-events-plugin:latest
-# OR: Build locally then containerize (faster)
-make console-image-local CONSOLE_IMG=quay.io/youruser/vm-events-plugin:latest
+# Deploy with your custom images (update manifests first)
+make deploy
 ```
 
 ### Running Locally
 
 ```bash
 # Set up environment
-export DB_CONNECTION="postgresql://vmevent:changeme@localhost:5432/vmevent?sslmode=disable"
+export DB_CONNECTION="postgresql://vmactivity:changeme@localhost:5432/vmactivity?sslmode=disable"
 export RETENTION_DAYS=30
 export AGGREGATION_WINDOW_MINUTES=5
 
 # Port-forward to database
-kubectl port-forward -n vm-event-operator-system vm-event-db-0 5432:5432
+kubectl port-forward -n vm-activity-plugin vm-activity-db-0 5432:5432
 
 # Run processor
 cd processor
@@ -186,26 +177,26 @@ go run cmd/main.go
 ### Processor Not Starting
 
 ```bash
-kubectl logs -n vm-event-operator-system deployment/vm-event-processor
+kubectl logs -n vm-activity-plugin deployment/vm-activity-processor
 ```
 
 Common issues:
-- Database not ready: Wait for `vm-event-db-0` pod
-- Missing secret: Check `vm-event-db-secret` exists
+- Database not ready: Wait for `vm-activity-db-0` pod
+- Missing secret: Check `vm-activity-db-secret` exists
 - RBAC issues: Verify ServiceAccount permissions
 
 ### Database Connection Issues
 
 ```bash
-kubectl exec -n vm-event-operator-system vm-event-db-0 -- \
-  psql -U vmevent -c "SELECT COUNT(*) FROM vm_events;"
+kubectl exec -n vm-activity-plugin vm-activity-db-0 -- \
+  psql -U vmactivity -c "SELECT COUNT(*) FROM vm_activity;"
 ```
 
 ### Console Plugin Not Showing
 
 ```bash
 kubectl get consoles.operator.openshift.io cluster -o jsonpath='{.spec.plugins}'
-kubectl logs -n vm-event-operator-system deployment/vm-events-plugin
+kubectl logs -n vm-activity-plugin deployment/vm-activity-plugin
 ```
 
 ## Uninstall

@@ -5,8 +5,8 @@ CONTAINER_TOOL ?= $(shell command -v podman 2>/dev/null || echo docker)
 
 # Image registry and tag
 REGISTRY ?= quay.io
-PROCESSOR_IMAGE_NAME ?= vm-event-processor
-CONSOLE_IMAGE_NAME ?= vm-events-plugin
+PROCESSOR_IMAGE_NAME ?= vm-activity-processor
+CONSOLE_IMAGE_NAME ?= vm-activity-plugin
 IMAGE_TAG ?= latest
 IMG ?= $(REGISTRY)/$(PROCESSOR_IMAGE_NAME):$(IMAGE_TAG)
 CONSOLE_IMG ?= $(REGISTRY)/$(CONSOLE_IMAGE_NAME):$(IMAGE_TAG)
@@ -51,14 +51,40 @@ docker-push: image-push
 .PHONY: deploy
 deploy:
 	@echo "Deploying to Kubernetes..."
-	@cd config && kustomize edit set image vm-event-processor=$(IMG)
-	@cd config && kustomize edit set image vm-events-plugin=$(CONSOLE_IMG)
 	@kubectl apply -k config
 
 .PHONY: undeploy
 undeploy:
 	@echo "Removing from Kubernetes..."
 	@kubectl delete -k config
+
+.PHONY: deploy-direct
+deploy-direct:
+	@echo "Deploying to Kubernetes (without kustomize)..."
+	@kubectl apply -f config/namespace/namespace.yaml
+	@kubectl apply -f config/database/postgres.yaml
+	@kubectl apply -f config/deploy/rbac.yaml
+	@kubectl apply -f config/deploy/configmap.yaml
+	@kubectl apply -f config/deploy/tls-proxy-config.yaml
+	@kubectl apply -f config/deploy/deployment.yaml
+	@kubectl apply -f config/deploy/service.yaml
+	@kubectl apply -f config/console/plugin.yaml
+	@kubectl apply -f config/webhook/mutating-webhook.yaml
+	@kubectl apply -f config/samples/retention-cronjob.yaml
+
+.PHONY: undeploy-direct
+undeploy-direct:
+	@echo "Removing from Kubernetes (without kustomize)..."
+	@kubectl delete -f config/samples/retention-cronjob.yaml --ignore-not-found
+	@kubectl delete -f config/webhook/mutating-webhook.yaml --ignore-not-found
+	@kubectl delete -f config/console/plugin.yaml --ignore-not-found
+	@kubectl delete -f config/deploy/service.yaml --ignore-not-found
+	@kubectl delete -f config/deploy/deployment.yaml --ignore-not-found
+	@kubectl delete -f config/deploy/tls-proxy-config.yaml --ignore-not-found
+	@kubectl delete -f config/deploy/configmap.yaml --ignore-not-found
+	@kubectl delete -f config/deploy/rbac.yaml --ignore-not-found
+	@kubectl delete -f config/database/postgres.yaml --ignore-not-found
+	@kubectl delete -f config/namespace/namespace.yaml --ignore-not-found
 
 .PHONY: console-install
 console-install:
@@ -137,8 +163,10 @@ help:
 	@echo "  console-image-local      - Build locally, then build and push image"
 	@echo ""
 	@echo "Deployment:"
-	@echo "  deploy             - Deploy to Kubernetes"
-	@echo "  undeploy           - Remove from Kubernetes"
+	@echo "  deploy             - Deploy to Kubernetes (using kustomize)"
+	@echo "  undeploy           - Remove from Kubernetes (using kustomize)"
+	@echo "  deploy-direct      - Deploy to Kubernetes (without kustomize)"
+	@echo "  undeploy-direct    - Remove from Kubernetes (without kustomize)"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  IMG            - Processor image (default: $(REGISTRY)/$(PROCESSOR_IMAGE_NAME):$(IMAGE_TAG))"

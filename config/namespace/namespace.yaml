@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: vm-event-operator-system
+  name: vm-activity-plugin
   labels:
-    app.kubernetes.io/name: vm-event-operator
+    app.kubernetes.io/name: vm-activity-operator
     app.kubernetes.io/component: namespace

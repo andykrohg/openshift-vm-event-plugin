@@ -1,8 +1,8 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: vm-event-db
-  namespace: vm-event-operator-system
+  name: vm-activity-db
+  namespace: vm-activity-plugin
 spec:
   instances: 3
   imageName: quay.io/enterprisedb/postgresql:16
@@ -24,8 +24,8 @@ spec:
 
   bootstrap:
     initdb:
-      database: vmevent
-      owner: vmevent
+      database: vmactivity
+      owner: vmactivity
       postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -38,7 +38,7 @@ spec:
 
   backup:
     barmanObjectStore:
-      destinationPath: s3://vm-event-backups/
+      destinationPath: s3://vm-activity-backups/
       s3Credentials:
         accessKeyId:
           name: backup-creds

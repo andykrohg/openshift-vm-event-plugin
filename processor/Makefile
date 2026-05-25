@@ -1,6 +1,6 @@
 # Image registry and tag
 REGISTRY ?= quay.io
-IMAGE_NAME ?= vm-event-processor
+IMAGE_NAME ?= vm-activity-processor
 IMAGE_TAG ?= latest
 IMG ?= $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 
@@ -10,7 +10,7 @@ CONTAINER_TOOL ?= $(shell command -v podman 2>/dev/null || echo docker)
 # Build the binary
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/vm-event-processor cmd/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/vm-activity-processor cmd/main.go
 
 # Run tests
 .PHONY: test
@@ -25,8 +25,8 @@ image-build:
 # Build the container image using local binary
 .PHONY: image-build-local
 image-build-local:
-	@if [ ! -f "bin/vm-event-processor" ]; then \
-		echo "Error: bin/vm-event-processor not found. Run 'make build' first."; \
+	@if [ ! -f "bin/vm-activity-processor" ]; then \
+		echo "Error: bin/vm-activity-processor not found. Run 'make build' first."; \
 		exit 1; \
 	fi
 	$(CONTAINER_TOOL) build --platform linux/amd64 -t $(IMG) -f Containerfile.local .
@@ -85,7 +85,7 @@ help:
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  REGISTRY        - Container registry (default: quay.io)"
-	@echo "  IMAGE_NAME      - Image name (default: vm-event-processor)"
+	@echo "  IMAGE_NAME      - Image name (default: vm-activity-processor)"
 	@echo "  IMAGE_TAG       - Image tag (default: latest)"
 	@echo "  IMG             - Full image reference (default: $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG))"
 	@echo "  CONTAINER_TOOL  - Container tool (default: auto-detect podman or docker)"

@@ -3,17 +3,17 @@
 apiVersion: v1
 kind: Config
 clusters:
-- name: vm-events-audit
+- name: vm-activity-audit
   cluster:
-    server: https://vm-events-api.vm-event-operator-system.svc:8443/api/v1/audit
+    server: https://vm-activity-api.vm-activity-plugin.svc:8443/api/v1/audit
     # Using OpenShift service-serving certificate
     # For strict verification in production, add certificate-authority bundle:
     # certificate-authority: /path/to/ca.crt
     insecure-skip-tls-verify: true
 contexts:
-- name: vm-events-audit
+- name: vm-activity-audit
   context:
-    cluster: vm-events-audit
+    cluster: vm-activity-audit
     user: ""
-current-context: vm-events-audit
+current-context: vm-activity-audit
 users: []

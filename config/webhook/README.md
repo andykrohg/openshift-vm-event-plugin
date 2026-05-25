@@ -25,7 +25,7 @@ The admission webhook intercepts VirtualMachine, VirtualMachineInstance, and Vir
 ### Prerequisites
 
 1. VM event processor deployed and running
-2. Service `vm-events-api` exposed on port 8443 with TLS
+2. Service `vm-activity-api` exposed on port 8443 with TLS
 
 ### Deploy the Webhook
 
@@ -47,10 +47,10 @@ If you're not on OpenShift, you'll need to manually set the `caBundle` field:
 
 ```bash
 # Get the CA bundle from the service certificate
-CA_BUNDLE=$(kubectl get secret vm-events-api-cert -n vm-event-operator-system -o jsonpath='{.data.ca\.crt}')
+CA_BUNDLE=$(kubectl get secret vm-activity-api-cert -n vm-activity-plugin -o jsonpath='{.data.ca\.crt}')
 
 # Update the webhook configuration
-kubectl patch mutatingwebhookconfiguration vm-events-webhook \
+kubectl patch mutatingwebhookconfiguration vm-activity-webhook \
   --type='json' \
   -p="[{'op': 'add', 'path': '/webhooks/0/clientConfig/caBundle', 'value':'$CA_BUNDLE'}]"
 ```
@@ -59,7 +59,7 @@ kubectl patch mutatingwebhookconfiguration vm-events-webhook \
 
 1. Check webhook is registered:
    ```bash
-   kubectl get mutatingwebhookconfiguration vm-events-webhook
+   kubectl get mutatingwebhookconfiguration vm-activity-webhook
    ```
 
 2. Create or update a VirtualMachine:
@@ -95,7 +95,7 @@ kubectl patch mutatingwebhookconfiguration vm-events-webhook \
 
 3. Check processor logs for cached user:
    ```bash
-   kubectl logs -n vm-event-operator-system deployment/vm-event-processor -c processor | grep "Cached user"
+   kubectl logs -n vm-activity-plugin deployment/vm-activity-processor -c processor | grep "Cached user"
    ```
 
    You should see output like:
@@ -109,7 +109,7 @@ kubectl patch mutatingwebhookconfiguration vm-events-webhook \
    kubectl patch vm test-vm --type merge -p '{"spec":{"running":true}}'
    
    # Check events via the console UI or API
-   curl -s https://vm-events-api.vm-event-operator-system.svc:8443/api/v1/namespaces/default/virtualmachines/test-vm/events | jq '.events[0].enrichment.user'
+   curl -s https://vm-activity-api.vm-activity-plugin.svc:8443/api/v1/namespaces/default/virtualmachines/test-vm/events | jq '.events[0].enrichment.user'
    ```
 
 ## How It Works
@@ -131,21 +131,21 @@ kubectl patch mutatingwebhookconfiguration vm-events-webhook \
 
 Check webhook configuration:
 ```bash
-kubectl describe mutatingwebhookconfiguration vm-events-webhook
+kubectl describe mutatingwebhookconfiguration vm-activity-webhook
 ```
 
 Verify the service and endpoint are accessible:
 ```bash
 # From within the cluster
 kubectl run test-curl --rm -i --restart=Never --image=registry.access.redhat.com/ubi9/ubi-minimal -- \
-  curl -k https://vm-events-api.vm-event-operator-system.svc:8443/api/v1/health
+  curl -k https://vm-activity-api.vm-activity-plugin.svc:8443/api/v1/health
 ```
 
 ### CA bundle not injected (OpenShift)
 
 Check the annotation is present:
 ```bash
-kubectl get mutatingwebhookconfiguration vm-events-webhook -o yaml | grep inject-cabundle
+kubectl get mutatingwebhookconfiguration vm-activity-webhook -o yaml | grep inject-cabundle
 ```
 
 ### Timeout errors
@@ -159,7 +159,7 @@ The webhook has a 5-second timeout. If you see timeout errors in API server logs
 
 1. Verify webhook is caching users:
    ```bash
-   kubectl logs -n vm-event-operator-system deployment/vm-event-processor -c processor | grep "Cached user"
+   kubectl logs -n vm-activity-plugin deployment/vm-activity-processor -c processor | grep "Cached user"
    ```
 
 2. Check cache timing - events must arrive within 10 minutes of the VM operation

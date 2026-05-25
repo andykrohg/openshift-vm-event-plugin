@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vm-event-config
-  namespace: vm-event-operator-system
+  name: vm-activity-config
+  namespace: vm-activity-plugin
   labels:
-    app: vm-event-processor
+    app: vm-activity-processor
 data:
   # How many days to retain events
   RETENTION_DAYS: "30"

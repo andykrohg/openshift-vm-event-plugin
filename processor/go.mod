@@ -1,4 +1,4 @@
-module github.com/andykrohg/openshift-vm-event-plugin/processor
+module github.com/andykrohg/openshift-vm-activity-plugin/processor
 
 go 1.25.0
 

@@ -24,9 +24,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/admission"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/storage"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/admission"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/audit"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/storage"
 )
 
 // Server represents the HTTP API server
@@ -70,7 +70,7 @@ func (s *Server) setupRoutes() {
 		api.GET("/health", s.handleHealth)
 
 		// VM events endpoints
-		api.GET("/namespaces/:namespace/virtualmachines/:name/events", s.authMiddleware(), s.handleGetVMEvents)
+		api.GET("/namespaces/:namespace/virtualmachines/:name/events", s.authMiddleware(), s.handleGetVMActivitys)
 		api.GET("/namespaces/:namespace/events", s.authMiddleware(), s.handleGetNamespaceEvents)
 		api.GET("/events", s.authMiddleware(), s.handleGetClusterEvents)
 		api.GET("/events/export", s.authMiddleware(), s.handleExportEvents)

@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/audit"
 )
 
 // WebhookHandler handles admission webhook requests for VirtualMachines

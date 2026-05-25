@@ -67,7 +67,7 @@ const EventHistoryListTab: React.FC = () => {
     if (currentNamespace) params.append('namespace', currentNamespace);
     params.append('format', format);
 
-    const url = `/api/proxy/plugin/vm-events/api/v1/events/export?${params.toString()}`;
+    const url = `/api/proxy/plugin/vm-activity/api/v1/events/export?${params.toString()}`;
     window.open(url, '_blank');
   };
 

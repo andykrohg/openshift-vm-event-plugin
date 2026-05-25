@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vm-event-processor
-  namespace: vm-event-operator-system
+  name: vm-activity-processor
+  namespace: vm-activity-plugin
   labels:
-    app: vm-event-processor
+    app: vm-activity-processor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: vm-event-processor
+      app: vm-activity-processor
   template:
     metadata:
       labels:
-        app: vm-event-processor
+        app: vm-activity-processor
     spec:
-      serviceAccountName: vm-event-processor
+      serviceAccountName: vm-activity-processor
       containers:
         - name: processor
-          image: vm-event-processor:latest
-          imagePullPolicy: IfNotPresent
+          image: quay.io/andy_krohg/vm-activity-processor:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
@@ -29,27 +29,27 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: vm-event-db-secret
+                  name: vm-activity-db-secret
                   key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: vm-event-db-secret
+                  name: vm-activity-db-secret
                   key: password
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: vm-event-db-secret
+                  name: vm-activity-db-secret
                   key: database
 
             # Database connection string with variable expansion
             - name: DB_CONNECTION
-              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@vm-event-db:5432/$(POSTGRES_DB)?sslmode=disable"
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@vm-activity-db:5432/$(POSTGRES_DB)?sslmode=disable"
 
           # Configuration from ConfigMap
           envFrom:
             - configMapRef:
-                name: vm-event-config
+                name: vm-activity-config
 
           resources:
             requests:
@@ -111,7 +111,7 @@ spec:
       volumes:
         - name: tls-proxy-conf
           configMap:
-            name: vm-events-api-tls-proxy
+            name: vm-activity-api-tls-proxy
         - name: tls-cert
           secret:
-            secretName: vm-events-api-cert
+            secretName: vm-activity-api-cert

@@ -26,7 +26,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/storage"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/storage"
 )
 
 // EventResponse represents an event in the API response
@@ -69,8 +69,8 @@ func (s *Server) handleHealth(c *gin.Context) {
 	})
 }
 
-// handleGetVMEvents handles GET /api/v1/namespaces/:namespace/virtualmachines/:name/events
-func (s *Server) handleGetVMEvents(c *gin.Context) {
+// handleGetVMActivitys handles GET /api/v1/namespaces/:namespace/virtualmachines/:name/events
+func (s *Server) handleGetVMActivitys(c *gin.Context) {
 	namespace := c.Param("namespace")
 	vmName := c.Param("name")
 
@@ -396,7 +396,7 @@ func (s *Server) handleExportEvents(c *gin.Context) {
 }
 
 // exportJSON exports events as JSON
-func (s *Server) exportJSON(c *gin.Context, events []storage.VMEvent) {
+func (s *Server) exportJSON(c *gin.Context, events []storage.VMActivity) {
 	eventResponses := make([]EventResponse, len(events))
 	for i, event := range events {
 		var enrichment map[string]interface{}
@@ -421,14 +421,14 @@ func (s *Server) exportJSON(c *gin.Context, events []storage.VMEvent) {
 		}
 	}
 
-	c.Header("Content-Disposition", "attachment; filename=vm-events.json")
+	c.Header("Content-Disposition", "attachment; filename=vm-activity.json")
 	c.JSON(http.StatusOK, eventResponses)
 }
 
 // exportCSV exports events as CSV
-func (s *Server) exportCSV(c *gin.Context, events []storage.VMEvent) {
+func (s *Server) exportCSV(c *gin.Context, events []storage.VMActivity) {
 	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=vm-events.csv")
+	c.Header("Content-Disposition", "attachment; filename=vm-activity.csv")
 
 	writer := csv.NewWriter(c.Writer)
 	defer writer.Flush()

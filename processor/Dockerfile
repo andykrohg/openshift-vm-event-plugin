@@ -21,7 +21,7 @@ COPY --chown=1001:0 cmd/ cmd/
 COPY --chown=1001:0 internal/ internal/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o vm-event-processor cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o vm-activity-processor cmd/main.go
 
 # Use Red Hat Universal Base Image (UBI) Micro as minimal base image
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest
@@ -29,9 +29,9 @@ FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 WORKDIR /
 
 # Copy the binary from builder
-COPY --from=builder /opt/app-root/src/vm-event-processor .
+COPY --from=builder /opt/app-root/src/vm-activity-processor .
 
 # Run as non-root user
 USER 65532:65532
 
-ENTRYPOINT ["/vm-event-processor"]
+ENTRYPOINT ["/vm-activity-processor"]

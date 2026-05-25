@@ -30,8 +30,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/aggregator"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/aggregator"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/audit"
 )
 
 // SnapshotWatcher watches VirtualMachineSnapshot resources
@@ -188,7 +188,7 @@ func (w *SnapshotWatcher) handleSnapshotCreated(ctx context.Context, snapshot *u
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
-				"vm-events.openshift.io/snapshot-name": name,
+				"vm-activity.openshift.io/snapshot-name": name,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -201,12 +201,12 @@ func (w *SnapshotWatcher) handleSnapshotCreated(ctx context.Context, snapshot *u
 		Message: fmt.Sprintf("Snapshot %s created by %s", name, userInfo.Username),
 		Type:    "Normal",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "snapshot-watcher",
 	}
 
@@ -236,7 +236,7 @@ func (w *SnapshotWatcher) handleSnapshotSucceeded(ctx context.Context, snapshot 
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
-				"vm-events.openshift.io/snapshot-name": name,
+				"vm-activity.openshift.io/snapshot-name": name,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -249,12 +249,12 @@ func (w *SnapshotWatcher) handleSnapshotSucceeded(ctx context.Context, snapshot 
 		Message: fmt.Sprintf("Snapshot %s is ready to use", name),
 		Type:    "Normal",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "snapshot-watcher",
 	}
 
@@ -301,7 +301,7 @@ func (w *SnapshotWatcher) handleSnapshotFailed(ctx context.Context, snapshot *un
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
-				"vm-events.openshift.io/snapshot-name": name,
+				"vm-activity.openshift.io/snapshot-name": name,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -314,12 +314,12 @@ func (w *SnapshotWatcher) handleSnapshotFailed(ctx context.Context, snapshot *un
 		Message: fmt.Sprintf("Snapshot %s failed: %s", name, errorMsg),
 		Type:    "Warning",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "snapshot-watcher",
 	}
 
@@ -362,7 +362,7 @@ func (w *SnapshotWatcher) handleSnapshotDeleted(ctx context.Context, snapshot *u
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
-				"vm-events.openshift.io/snapshot-name": name,
+				"vm-activity.openshift.io/snapshot-name": name,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -375,12 +375,12 @@ func (w *SnapshotWatcher) handleSnapshotDeleted(ctx context.Context, snapshot *u
 		Message: fmt.Sprintf("Snapshot %s deleted by %s", name, userInfo.Username),
 		Type:    "Normal",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "snapshot-watcher",
 	}
 

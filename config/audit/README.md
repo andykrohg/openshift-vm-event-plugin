@@ -88,7 +88,7 @@ The kubelet will automatically restart the API server pod when the manifest chan
 
 1. Check processor logs for audit events:
    ```bash
-   kubectl logs -n vm-event-operator-system deployment/vm-event-processor -c processor | grep "Cached user"
+   kubectl logs -n vm-activity-plugin deployment/vm-activity-processor -c processor | grep "Cached user"
    ```
 
 2. Start/stop a VM and verify username appears in event details:
@@ -110,21 +110,21 @@ The kubelet will automatically restart the API server pod when the manifest chan
 2. Verify network connectivity:
    ```bash
    # From a debug pod in kube-system namespace:
-   curl -X POST http://vm-events-api.vm-event-operator-system.svc:8080/audit \
+   curl -X POST http://vm-activity-api.vm-activity-plugin.svc:8080/audit \
      -H "Content-Type: application/json" \
      -d '{"kind":"Event","apiVersion":"audit.k8s.io/v1"}'
    ```
 
 3. Check processor logs:
    ```bash
-   kubectl logs -n vm-event-operator-system deployment/vm-event-processor -c processor
+   kubectl logs -n vm-activity-plugin deployment/vm-activity-processor -c processor
    ```
 
 ### Username not appearing in events
 
 1. Verify audit events are being cached:
    ```bash
-   kubectl logs -n vm-event-operator-system deployment/vm-event-processor -c processor | grep "Cached user"
+   kubectl logs -n vm-activity-plugin deployment/vm-activity-processor -c processor | grep "Cached user"
    ```
 
 2. Check cache timing - events must arrive within 10 minutes of the audit event

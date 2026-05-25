@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vm-events-api-tls-proxy
-  namespace: vm-event-operator-system
+  name: vm-activity-api-tls-proxy
+  namespace: vm-activity-plugin
 data:
   nginx.conf: |
     worker_processes auto;

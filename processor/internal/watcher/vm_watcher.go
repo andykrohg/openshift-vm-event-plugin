@@ -31,8 +31,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/aggregator"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/aggregator"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/audit"
 )
 
 // VMWatcher watches VirtualMachine resources for create/update/delete
@@ -159,12 +159,12 @@ func (w *VMWatcher) handleVMCreated(ctx context.Context, vm *unstructured.Unstru
 		Message: fmt.Sprintf("VirtualMachine %s created by %s", name, userInfo.Username),
 		Type:    "Normal",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "vm-watcher",
 	}
 
@@ -226,7 +226,7 @@ func (w *VMWatcher) handleVMUpdated(ctx context.Context, oldVM, newVM *unstructu
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
-				"vm-events.openshift.io/patch": string(patchJSON),
+				"vm-activity.openshift.io/patch": string(patchJSON),
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -240,12 +240,12 @@ func (w *VMWatcher) handleVMUpdated(ctx context.Context, oldVM, newVM *unstructu
 		Message: message,
 		Type:    "Normal",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "vm-watcher",
 	}
 
@@ -294,12 +294,12 @@ func (w *VMWatcher) handleVMDeleted(ctx context.Context, vm *unstructured.Unstru
 		Message: fmt.Sprintf("VirtualMachine %s deleted by %s", name, userInfo.Username),
 		Type:    "Normal",
 		Source: corev1.EventSource{
-			Component: "vm-event-operator",
+			Component: "vm-activity-operator",
 		},
 		FirstTimestamp:      metav1.Now(),
 		LastTimestamp:       metav1.Now(),
 		Count:               1,
-		ReportingController: "vm-event-operator",
+		ReportingController: "vm-activity-operator",
 		ReportingInstance:   "vm-watcher",
 	}
 

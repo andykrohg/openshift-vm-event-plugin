@@ -1,37 +1,37 @@
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
-  name: vm-events-plugin
+  name: vm-activity-plugin
 spec:
-  displayName: "VM Event History"
+  displayName: "VM Activity History"
   backend:
     type: Service
     service:
-      name: vm-events-plugin
-      namespace: vm-event-operator-system
+      name: vm-activity-plugin
+      namespace: vm-activity-plugin
       port: 9443
       basePath: "/"
   proxy:
-    - alias: vm-events
+    - alias: vm-activity
       authorization: UserToken
       endpoint:
         type: Service
         service:
-          name: vm-events-api
-          namespace: vm-event-operator-system
+          name: vm-activity-api
+          namespace: vm-activity-plugin
           port: 8443
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: vm-events-plugin
-  namespace: vm-event-operator-system
+  name: vm-activity-plugin
+  namespace: vm-activity-plugin
   labels:
-    app: vm-events-plugin
-    app.kubernetes.io/name: vm-events-plugin
+    app: vm-activity-plugin
+    app.kubernetes.io/name: vm-activity-plugin
     app.kubernetes.io/component: console-plugin
   annotations:
-    service.beta.openshift.io/serving-cert-secret-name: vm-events-plugin-cert
+    service.beta.openshift.io/serving-cert-secret-name: vm-activity-plugin-cert
 spec:
   ports:
     - name: https
@@ -39,31 +39,32 @@ spec:
       port: 9443
       targetPort: 9443
   selector:
-    app: vm-events-plugin
+    app: vm-activity-plugin
   type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vm-events-plugin
-  namespace: vm-event-operator-system
+  name: vm-activity-plugin
+  namespace: vm-activity-plugin
   labels:
-    app: vm-events-plugin
-    app.kubernetes.io/name: vm-events-plugin
+    app: vm-activity-plugin
+    app.kubernetes.io/name: vm-activity-plugin
     app.kubernetes.io/component: console-plugin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: vm-events-plugin
+      app: vm-activity-plugin
   template:
     metadata:
       labels:
-        app: vm-events-plugin
+        app: vm-activity-plugin
     spec:
       containers:
-        - name: vm-events-plugin
-          image: vm-events-plugin:latest
+        - name: vm-activity-plugin
+          image: quay.io/andy_krohg/vm-activity-plugin:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 9443
               protocol: TCP
@@ -84,16 +85,16 @@ spec:
       volumes:
         - name: nginx-conf
           configMap:
-            name: vm-events-plugin-nginx
+            name: vm-activity-plugin-nginx
         - name: nginx-cert
           secret:
-            secretName: vm-events-plugin-cert
+            secretName: vm-activity-plugin-cert
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vm-events-plugin-nginx
-  namespace: vm-event-operator-system
+  name: vm-activity-plugin-nginx
+  namespace: vm-activity-plugin
 data:
   nginx.conf: |
     worker_processes auto;

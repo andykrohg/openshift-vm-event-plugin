@@ -29,7 +29,7 @@ export interface QueryParams {
   offset?: number;
 }
 
-const API_BASE_PATH = '/api/proxy/plugin/vm-events-plugin/vm-events/api/v1';
+const API_BASE_PATH = '/api/proxy/plugin/vm-activity-plugin/vm-activity/api/v1';
 
 export async function fetchVMEvents(
   namespace: string,
@@ -83,7 +83,7 @@ export async function exportEvents(
   const downloadUrl = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = downloadUrl;
-  a.download = `vm-events-${vmName}.${format}`;
+  a.download = `vm-activity-${vmName}.${format}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -94,7 +94,7 @@ export async function exportEvents(
 export async function fetchJSON<T = any>(path: string): Promise<T> {
   const url = path.startsWith('/api/proxy')
     ? path
-    : `/api/proxy/plugin/vm-events-plugin/vm-events${path}`;
+    : `/api/proxy/plugin/vm-activity-plugin/vm-activity${path}`;
 
   const response = await fetch(url, {
     method: 'GET',

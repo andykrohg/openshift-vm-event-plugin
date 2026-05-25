@@ -1,16 +1,16 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: vm-events-webhook
+  name: vm-activity-webhook
   annotations:
     service.beta.openshift.io/inject-cabundle: "true"
 webhooks:
-- name: vm-events.openshift.io
+- name: vm-activity.openshift.io
   admissionReviewVersions: ["v1"]
   clientConfig:
     service:
-      name: vm-events-api
-      namespace: vm-event-operator-system
+      name: vm-activity-api
+      namespace: vm-activity-plugin
       path: /mutate
       port: 8443
     # CABundle will be injected by OpenShift via the annotation above

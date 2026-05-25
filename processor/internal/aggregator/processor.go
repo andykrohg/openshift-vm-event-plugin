@@ -30,8 +30,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/storage"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/audit"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/storage"
 )
 
 const (
@@ -197,11 +197,11 @@ func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{}
 
 	// Extract patch information from annotations (for VMUpdated events)
 	if event.Annotations != nil {
-		if patch, ok := event.Annotations["vm-events.openshift.io/patch"]; ok && patch != "" {
+		if patch, ok := event.Annotations["vm-activity.openshift.io/patch"]; ok && patch != "" {
 			// Store the raw patch JSON
 			enrichment["patch"] = patch
 		}
-		if snapshotName, ok := event.Annotations["vm-events.openshift.io/snapshot-name"]; ok && snapshotName != "" {
+		if snapshotName, ok := event.Annotations["vm-activity.openshift.io/snapshot-name"]; ok && snapshotName != "" {
 			enrichment["snapshotName"] = snapshotName
 		}
 	}
@@ -404,7 +404,7 @@ func (p *EventProcessor) flushBatch() error {
 
 // writeBatch writes a batch of events to the database
 func (p *EventProcessor) writeBatch(events []*ProcessedEvent) error {
-	dbEvents := make([]storage.VMEvent, len(events))
+	dbEvents := make([]storage.VMActivity, len(events))
 
 	for i, event := range events {
 		enrichmentJSON, err := json.Marshal(event.Enrichment)
@@ -412,7 +412,7 @@ func (p *EventProcessor) writeBatch(events []*ProcessedEvent) error {
 			return fmt.Errorf("failed to marshal enrichment: %w", err)
 		}
 
-		dbEvents[i] = storage.VMEvent{
+		dbEvents[i] = storage.VMActivity{
 			EventUID:        event.EventUID,
 			VMName:          event.VMName,
 			VMNamespace:     event.VMNamespace,

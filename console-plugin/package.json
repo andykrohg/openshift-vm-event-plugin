@@ -1,12 +1,12 @@
 {
-  "name": "vm-events-plugin",
+  "name": "vm-activity-plugin",
   "version": "0.0.1",
-  "description": "OpenShift Console plugin for VM event history",
+  "description": "OpenShift Console plugin for VM activity history",
   "private": true,
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/andykrohg/openshift-vm-event-plugin.git"
+    "url": "https://github.com/andykrohg/openshift-vm-activity-plugin.git"
   },
   "scripts": {
     "clean": "rm -rf dist",
@@ -54,10 +54,10 @@
     "webpack-dev-server": "^5.2.3"
   },
   "consolePlugin": {
-    "name": "vm-events-plugin",
+    "name": "vm-activity-plugin",
     "version": "0.0.1",
-    "displayName": "VM Event History",
-    "description": "Extended event history for OpenShift Virtualization VMs",
+    "displayName": "VM Activity History",
+    "description": "Activity history and audit trail for OpenShift Virtualization VMs",
     "exposedModules": {
       "EventHistoryTab": "./components/EventTimeline"
     },

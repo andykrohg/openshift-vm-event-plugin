@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
-	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/aggregator"
+	"github.com/andykrohg/openshift-vm-activity-plugin/processor/internal/aggregator"
 )
 
 // EventWatcher watches Kubernetes Events related to VirtualMachines
