@@ -1,0 +1,124 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: vm-events-plugin
+spec:
+  displayName: "VM Event History"
+  backend:
+    type: Service
+    service:
+      name: vm-events-plugin
+      namespace: vm-event-operator-system
+      port: 9443
+      basePath: "/"
+  proxy:
+    - alias: vm-events
+      authorization: UserToken
+      endpoint:
+        type: Service
+        service:
+          name: vm-events-api
+          namespace: vm-event-operator-system
+          port: 8443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vm-events-plugin
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-events-plugin
+    app.kubernetes.io/name: vm-events-plugin
+    app.kubernetes.io/component: console-plugin
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: vm-events-plugin-cert
+spec:
+  ports:
+    - name: https
+      protocol: TCP
+      port: 9443
+      targetPort: 9443
+  selector:
+    app: vm-events-plugin
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vm-events-plugin
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-events-plugin
+    app.kubernetes.io/name: vm-events-plugin
+    app.kubernetes.io/component: console-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vm-events-plugin
+  template:
+    metadata:
+      labels:
+        app: vm-events-plugin
+    spec:
+      containers:
+        - name: vm-events-plugin
+          image: vm-events-plugin:latest
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-cert
+              mountPath: /etc/nginx/certs
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: vm-events-plugin-nginx
+        - name: nginx-cert
+          secret:
+            secretName: vm-events-plugin-cert
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vm-events-plugin-nginx
+  namespace: vm-event-operator-system
+data:
+  nginx.conf: |
+    worker_processes auto;
+    error_log /dev/stderr info;
+    pid /tmp/nginx.pid;
+
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      access_log /dev/stdout;
+
+      server {
+        listen 9443 ssl;
+        ssl_certificate /etc/nginx/certs/tls.crt;
+        ssl_certificate_key /etc/nginx/certs/tls.key;
+
+        root /usr/share/nginx/html;
+
+        location / {
+          try_files $uri $uri/ /index.html;
+        }
+      }
+    }

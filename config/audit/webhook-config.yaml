@@ -1,0 +1,19 @@
+# Audit webhook configuration for Kubernetes API server
+# This configures the API server to send audit events to our processor
+apiVersion: v1
+kind: Config
+clusters:
+- name: vm-events-audit
+  cluster:
+    server: https://vm-events-api.vm-event-operator-system.svc:8443/api/v1/audit
+    # Using OpenShift service-serving certificate
+    # For strict verification in production, add certificate-authority bundle:
+    # certificate-authority: /path/to/ca.crt
+    insecure-skip-tls-verify: true
+contexts:
+- name: vm-events-audit
+  context:
+    cluster: vm-events-audit
+    user: ""
+current-context: vm-events-audit
+users: []

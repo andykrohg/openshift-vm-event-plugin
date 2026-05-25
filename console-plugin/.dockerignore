@@ -1,0 +1,25 @@
+# Node modules and dependencies
+node_modules
+.yarn/cache
+.yarn/install-state.gz
+
+# Source files (only needed for full build, not local build)
+src
+*.ts
+*.tsx
+tsconfig.json
+webpack.config.ts
+eslint.config.mjs
+
+# Development files
+.git
+.gitignore
+*.md
+.vscode
+.devcontainer
+
+# Keep these for builds:
+# dist/
+# package.json
+# .yarn/releases/
+# .yarnrc.yml

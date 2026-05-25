@@ -1,0 +1,25 @@
+# Audit policy for capturing VM-related operations
+# This policy sends only VirtualMachine and VirtualMachineInstance operations to the webhook
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # Capture VirtualMachine operations (create, update, patch, delete)
+  - level: RequestResponse
+    resources:
+    - group: "kubevirt.io"
+      resources: ["virtualmachines"]
+    verbs: ["create", "update", "patch", "delete"]
+    omitStages:
+      - "RequestReceived"
+
+  # Capture VirtualMachineInstance operations
+  - level: RequestResponse
+    resources:
+    - group: "kubevirt.io"
+      resources: ["virtualmachineinstances"]
+    verbs: ["create", "update", "patch", "delete"]
+    omitStages:
+      - "RequestReceived"
+
+  # Don't audit anything else
+  - level: None

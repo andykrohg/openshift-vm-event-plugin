@@ -1,0 +1,19 @@
+# Binaries and build artifacts (commented out for local builds)
+# bin/
+
+# Testing
+*.test
+coverage.out
+
+# Development files
+.git
+.gitignore
+*.md
+.vscode
+.devcontainer
+
+# Keep these for builds:
+# go.mod
+# go.sum
+# cmd/
+# internal/

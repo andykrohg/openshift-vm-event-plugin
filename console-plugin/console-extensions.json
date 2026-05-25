@@ -1,0 +1,36 @@
+[
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "kubevirt.io",
+        "version": "v1",
+        "kind": "VirtualMachine"
+      },
+      "page": {
+        "name": "Event History",
+        "href": "event-history"
+      },
+      "component": {
+        "$codeRef": "EventHistoryTab"
+      }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "kubevirt.io",
+        "version": "v1",
+        "kind": "VirtualMachineInstance"
+      },
+      "page": {
+        "name": "Event History",
+        "href": "event-history"
+      },
+      "component": {
+        "$codeRef": "EventHistoryTab"
+      }
+    }
+  }
+]

@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vm-event-processor
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-event-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vm-event-processor
+  template:
+    metadata:
+      labels:
+        app: vm-event-processor
+    spec:
+      serviceAccountName: vm-event-processor
+      containers:
+        - name: processor
+          image: vm-event-processor:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            # Database credentials from secret (must be defined BEFORE DB_CONNECTION)
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: vm-event-db-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vm-event-db-secret
+                  key: password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: vm-event-db-secret
+                  key: database
+
+            # Database connection string with variable expansion
+            - name: DB_CONNECTION
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@vm-event-db:5432/$(POSTGRES_DB)?sslmode=disable"
+
+          # Configuration from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: vm-event-config
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+
+        - name: tls-proxy
+          image: registry.access.redhat.com/ubi9/nginx-124:latest
+          command: ["nginx", "-g", "daemon off;"]
+          ports:
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+          volumeMounts:
+            - name: tls-proxy-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: tls-cert
+              mountPath: /etc/nginx/certs
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+
+      volumes:
+        - name: tls-proxy-conf
+          configMap:
+            name: vm-events-api-tls-proxy
+        - name: tls-cert
+          secret:
+            secretName: vm-events-api-cert

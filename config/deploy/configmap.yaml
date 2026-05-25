@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vm-event-config
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-event-processor
+data:
+  # How many days to retain events
+  RETENTION_DAYS: "30"
+
+  # Time window (in minutes) for aggregating duplicate events
+  AGGREGATION_WINDOW_MINUTES: "5"
+
+  # API server port
+  API_PORT: "8080"
+
+  # Comma-separated list of event reasons to ignore
+  # Filter out noisy Kubernetes object lifecycle events
+  FILTER_REASONS: "Pulling,Pulled,SuccessfulCreate,SuccessfulDelete,Created,Deleted"

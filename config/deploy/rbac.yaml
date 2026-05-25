@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vm-event-processor
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-event-processor
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vm-event-processor
+  labels:
+    app: vm-event-processor
+rules:
+  # Watch Events across all namespaces
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+  # Read VirtualMachines and VirtualMachineInstances
+  # (optional - for enrichment, not strictly required)
+  - apiGroups: ["kubevirt.io"]
+    resources: ["virtualmachines", "virtualmachineinstances"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vm-event-processor
+  labels:
+    app: vm-event-processor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vm-event-processor
+subjects:
+  - kind: ServiceAccount
+    name: vm-event-processor
+    namespace: vm-event-operator-system

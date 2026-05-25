@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vm-event-db-secret
+  namespace: vm-event-operator-system
+type: Opaque
+stringData:
+  username: vmevent
+  password: changeme  # Change this in production!
+  database: vmevent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vm-event-db
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-event-db
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    app: vm-event-db
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vm-event-db
+  namespace: vm-event-operator-system
+  labels:
+    app: vm-event-db
+spec:
+  serviceName: vm-event-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vm-event-db
+  template:
+    metadata:
+      labels:
+        app: vm-event-db
+    spec:
+      containers:
+        - name: postgres
+          image: registry.redhat.io/rhel9/postgresql-16:latest
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: vm-event-db-secret
+                  key: username
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vm-event-db-secret
+                  key: password
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: vm-event-db-secret
+                  key: database
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - vmevent
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - vmevent
+            initialDelaySeconds: 5
+            periodSeconds: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
