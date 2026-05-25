@@ -65,24 +65,32 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
       </FlexItem>
 
       <FlexItem>
-        <FormGroup label="Event type">
+        <FormGroup label="Activity type">
           <FormSelect
             value={filters.eventType || 'all'}
             onChange={handleEventTypeChange}
           >
-            <FormSelectOption key="all" value="all" label="All events" />
+            <FormSelectOption key="all" value="all" label="All activities" />
             <FormSelectOption key="VMCreated" value="VMCreated" label="VM Created" />
             <FormSelectOption key="VMUpdated" value="VMUpdated" label="VM Updated" />
             <FormSelectOption key="VMDeleted" value="VMDeleted" label="VM Deleted" />
             <FormSelectOption key="Started" value="Started" label="VM Started" />
             <FormSelectOption key="Stopped" value="Stopped" label="VM Stopped" />
+            <FormSelectOption key="Restarted" value="Restarted" label="VM Restarted" />
             <FormSelectOption key="ShuttingDown" value="ShuttingDown" label="VM Shutting down" />
-            <FormSelectOption key="Migrated" value="Migrated" label="VM Migrated" />
+            <FormSelectOption key="MigrationStarted" value="MigrationStarted" label="Migration Started" />
+            <FormSelectOption key="MigrationSucceeded" value="MigrationSucceeded" label="Migration Succeeded" />
+            <FormSelectOption key="MigrationFailed" value="MigrationFailed" label="Migration Failed" />
+            <FormSelectOption key="CloneStarted" value="CloneStarted" label="Clone Started" />
+            <FormSelectOption key="CloneSucceeded" value="CloneSucceeded" label="Clone Succeeded" />
+            <FormSelectOption key="CloneFailed" value="CloneFailed" label="Clone Failed" />
             <FormSelectOption key="SnapshotCreated" value="SnapshotCreated" label="Snapshot Created" />
             <FormSelectOption key="SnapshotReady" value="SnapshotReady" label="Snapshot Ready" />
             <FormSelectOption key="SnapshotFailed" value="SnapshotFailed" label="Snapshot Failed" />
             <FormSelectOption key="SnapshotDeleted" value="SnapshotDeleted" label="Snapshot Deleted" />
-            <FormSelectOption key="FailedSync" value="FailedSync" label="Failed sync" />
+            <FormSelectOption key="RestoreStarted" value="RestoreStarted" label="Restore Started" />
+            <FormSelectOption key="RestoreComplete" value="RestoreComplete" label="Restore Complete" />
+            <FormSelectOption key="RestoreFailed" value="RestoreFailed" label="Restore Failed" />
           </FormSelect>
         </FormGroup>
       </FlexItem>

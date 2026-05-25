@@ -1,12 +1,12 @@
-# Containerfile for local builds - expects bin/vm-event-processor to be pre-built
+# Containerfile for local builds - expects bin/vm-activity-processor to be pre-built
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 
 WORKDIR /
 
 # Copy pre-built binary
-COPY bin/vm-event-processor .
+COPY bin/vm-activity-processor .
 
 # Run as non-root user
 USER 65532:65532
 
-ENTRYPOINT ["/vm-event-processor"]
+ENTRYPOINT ["/vm-activity-processor"]

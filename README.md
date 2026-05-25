@@ -1,6 +1,7 @@
 # OpenShift VM Activity Plugin
 
 Extended event history for OpenShift Virtualization VMs with a rich console UI.
+![Activity View](activity.png)
 
 ## Features
 
@@ -17,13 +18,45 @@ Extended event history for OpenShift Virtualization VMs with a rich console UI.
 
 ## Architecture
 
-- **Event Processor** (Go) - Watches VirtualMachine/VirtualMachineInstance/VirtualMachineSnapshot resources and Kubernetes Events, stores them in PostgreSQL
-  - Admission webhook for capturing user context
-  - Resource watchers for generating synthetic lifecycle events
-  - Event aggregator for deduplication and enrichment
-- **PostgreSQL Database** - Configurable storage (simple, HA, or external)
-- **REST API** - Serves events to the console plugin (per-VM, per-namespace, or cluster-wide)
-- **Console Plugin** (React/TypeScript) - Timeline UI integrated into OpenShift Console
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         OpenShift Cluster                           │
+│                                                                     │
+│  ┌──────────────────┐         ┌──────────────────────────────────┐ │
+│  │  Kubernetes API  │         │   VM Activity Processor Pod      │ │
+│  │                  │         │                                  │ │
+│  │  VM Resources    │◄────────┤  Admission Webhook               │ │
+│  │  Events          │  watch  │  (capture user on create/modify) │ │
+│  └────────┬─────────┘         │                                  │ │
+│           │                   │  Resource Watchers               │ │
+│           │  mutations        │  (VMs, snapshots, migrations,    │ │
+│           │  callbacks        │   clones, restores, events)      │ │
+│           │                   │          │                       │ │
+│           └──────────────────►│  Event Aggregator                │ │
+│                               │  (deduplicate, enrich w/ user)   │ │
+│                               │          │                       │ │
+│                               │  REST API (:8080)                │ │
+│                               └──────────┼───────────────────────┘ │
+│                                          │                         │
+│  ┌───────────────────────────────────────┼─────────────────────┐   │
+│  │              PostgreSQL               │                     │   │
+│  │         (vm_activity table)           │                     │   │
+│  └───────────────────────────────────────┼─────────────────────┘   │
+│                                          │ query                   │
+│  ┌───────────────────────────────────────┼─────────────────────┐   │
+│  │         Console Plugin Pod            │                     │   │
+│  │   (React UI - Activity Timeline) ◄────┘                     │   │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- **User Attribution**: Admission webhook captures who performed each action
+- **Synthetic Events**: Watchers generate lifecycle events (create, delete, snapshot, migrate, clone, restore)
+- **Event Enrichment**: Adds user, configuration patches, node info, and related resources
+- **Long-term Storage**: PostgreSQL with configurable retention (default: 30 days)
+- **Rich UI**: Timeline view with filters and export in OpenShift Console
 
 ## Project Structure
 
@@ -63,13 +96,13 @@ All container images use Red Hat Universal Base Images (UBI) and Red Hat certifi
 
 ## Prerequisites
 
-- OpenShift 4.14+ or Kubernetes 1.28+
-- OpenShift Virtualization (KubeVirt) installed
-- Red Hat registry access (pre-configured on OpenShift clusters)
+- OpenShift 4.14+
+- [kustomize](https://kustomize.io/) installed
+- OpenShift Virtualization installed
 
 ## Quick Start
 
-**No cloning required!** Deploy directly from GitHub:
+Deploy directly from GitHub:
 
 ```bash
 # Deploy everything (uses pre-built images)

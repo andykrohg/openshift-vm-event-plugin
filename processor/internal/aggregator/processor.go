@@ -195,7 +195,7 @@ func (p *EventProcessor) generateDeduplicationKey(event *corev1.Event) string {
 func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{} {
 	enrichment := make(map[string]interface{})
 
-	// Extract patch information from annotations (for VMUpdated events)
+	// Extract information from annotations
 	if event.Annotations != nil {
 		if patch, ok := event.Annotations["vm-activity.openshift.io/patch"]; ok && patch != "" {
 			// Store the raw patch JSON
@@ -203,6 +203,10 @@ func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{}
 		}
 		if snapshotName, ok := event.Annotations["vm-activity.openshift.io/snapshot-name"]; ok && snapshotName != "" {
 			enrichment["snapshotName"] = snapshotName
+		}
+		// Extract user from watcher-provided annotation (takes precedence)
+		if user, ok := event.Annotations["vm-activity.openshift.io/user"]; ok && user != "" {
+			enrichment["user"] = user
 		}
 	}
 
@@ -229,10 +233,12 @@ func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{}
 		enrichment["reportingInstance"] = event.ReportingInstance
 	}
 
-	// Fetch VM metadata for additional context
-	if vmInfo := p.fetchVMMetadata(event); len(vmInfo) > 0 {
-		for k, v := range vmInfo {
-			enrichment[k] = v
+	// Fetch VM metadata for additional context (only if user not already set from annotations)
+	if _, hasUser := enrichment["user"]; !hasUser {
+		if vmInfo := p.fetchVMMetadata(event); len(vmInfo) > 0 {
+			for k, v := range vmInfo {
+				enrichment[k] = v
+			}
 		}
 	}
 

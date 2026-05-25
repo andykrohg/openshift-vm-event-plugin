@@ -147,6 +147,9 @@ func (w *VMWatcher) handleVMCreated(ctx context.Context, vm *unstructured.Unstru
 			Name:      eventName,
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
+			Annotations: map[string]string{
+				"vm-activity.openshift.io/user": userInfo.Username,
+			},
 		},
 		InvolvedObject: corev1.ObjectReference{
 			Kind:       "VirtualMachine",
@@ -156,7 +159,7 @@ func (w *VMWatcher) handleVMCreated(ctx context.Context, vm *unstructured.Unstru
 			APIVersion: "kubevirt.io/v1",
 		},
 		Reason:  "VMCreated",
-		Message: fmt.Sprintf("VirtualMachine %s created by %s", name, userInfo.Username),
+		Message: fmt.Sprintf("VirtualMachine %s created", name),
 		Type:    "Normal",
 		Source: corev1.EventSource{
 			Component: "vm-activity-operator",
@@ -215,7 +218,7 @@ func (w *VMWatcher) handleVMUpdated(ctx context.Context, oldVM, newVM *unstructu
 		patchJSON = []byte("{}")
 	}
 
-	message := fmt.Sprintf("VirtualMachine %s configuration updated by %s", name, userInfo.Username)
+	message := fmt.Sprintf("VirtualMachine %s configuration updated", name)
 
 	// Create synthetic event with patch in message
 	eventTime := time.Now()
@@ -227,6 +230,7 @@ func (w *VMWatcher) handleVMUpdated(ctx context.Context, oldVM, newVM *unstructu
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
 				"vm-activity.openshift.io/patch": string(patchJSON),
+				"vm-activity.openshift.io/user":  userInfo.Username,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -282,6 +286,9 @@ func (w *VMWatcher) handleVMDeleted(ctx context.Context, vm *unstructured.Unstru
 			Name:      eventName,
 			Namespace: namespace,
 			UID:       generateEventUID(eventName),
+			Annotations: map[string]string{
+				"vm-activity.openshift.io/user": userInfo.Username,
+			},
 		},
 		InvolvedObject: corev1.ObjectReference{
 			Kind:       "VirtualMachine",
@@ -291,7 +298,7 @@ func (w *VMWatcher) handleVMDeleted(ctx context.Context, vm *unstructured.Unstru
 			APIVersion: "kubevirt.io/v1",
 		},
 		Reason:  "VMDeleted",
-		Message: fmt.Sprintf("VirtualMachine %s deleted by %s", name, userInfo.Username),
+		Message: fmt.Sprintf("VirtualMachine %s deleted", name),
 		Type:    "Normal",
 		Source: corev1.EventSource{
 			Component: "vm-activity-operator",

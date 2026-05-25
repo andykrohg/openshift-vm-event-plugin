@@ -61,7 +61,7 @@ const EventItem: React.FC<{ event: VMEvent }> = ({ event }) => {
             <DataListCell key="icon" width={1}>
               {icon}
             </DataListCell>,
-            <DataListCell key="main" width={5}>
+            <DataListCell key="main" width={4}>
               <div>
                 <Label color={isWarning ? 'orange' : 'blue'}>{event.reason}</Label>
                 <Content component={ContentVariants.small} style={{ marginLeft: '8px' }}>
@@ -104,15 +104,6 @@ const EventItem: React.FC<{ event: VMEvent }> = ({ event }) => {
                       {event.eventType}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
-
-                  {event.enrichment?.user && (
-                    <DescriptionListGroup>
-                      <DescriptionListTerm>User</DescriptionListTerm>
-                      <DescriptionListDescription>
-                        {event.enrichment.user}
-                      </DescriptionListDescription>
-                    </DescriptionListGroup>
-                  )}
 
                   {event.enrichment?.snapshotName && (
                     <DescriptionListGroup>
@@ -157,6 +148,14 @@ const EventItem: React.FC<{ event: VMEvent }> = ({ event }) => {
                   })()}
                 </DescriptionList>
               </ExpandableSection>
+            </DataListCell>,
+            <DataListCell key="user" width={2}>
+              <Content component={ContentVariants.small} style={{ color: 'var(--pf-v5-global--Color--200)' }}>
+                User
+              </Content>
+              <Content component={ContentVariants.p}>
+                {event.enrichment?.user || '—'}
+              </Content>
             </DataListCell>,
           ]}
         />

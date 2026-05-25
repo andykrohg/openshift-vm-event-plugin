@@ -133,6 +133,7 @@ func (w *SnapshotWatcher) getSnapshotStatus(snapshot *unstructured.Unstructured)
 		return "ready"
 	}
 
+	// Check for actual failure conditions, not just "not ready yet"
 	conditions, found, _ := unstructured.NestedSlice(snapshot.Object, "status", "conditions")
 	if found {
 		for _, cond := range conditions {
@@ -142,9 +143,16 @@ func (w *SnapshotWatcher) getSnapshotStatus(snapshot *unstructured.Unstructured)
 			}
 			condType, _ := condMap["type"].(string)
 			status, _ := condMap["status"].(string)
+			reason, _ := condMap["reason"].(string)
 
+			// Only consider it failed if there's an explicit error reason,
+			// not just because Ready=False (which is normal during creation)
 			if condType == "Ready" && status == "False" {
-				return "failed"
+				// Check for actual error reasons
+				if reason == "Error" || reason == "SnapshotFailed" ||
+				   reason == "SourceVMNotFound" || reason == "FailedPvcNotFound" {
+					return "failed"
+				}
 			}
 		}
 	}
@@ -189,6 +197,7 @@ func (w *SnapshotWatcher) handleSnapshotCreated(ctx context.Context, snapshot *u
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
 				"vm-activity.openshift.io/snapshot-name": name,
+				"vm-activity.openshift.io/user":          userInfo.Username,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -198,7 +207,7 @@ func (w *SnapshotWatcher) handleSnapshotCreated(ctx context.Context, snapshot *u
 			APIVersion: "kubevirt.io/v1",
 		},
 		Reason:  "SnapshotCreated",
-		Message: fmt.Sprintf("Snapshot %s created by %s", name, userInfo.Username),
+		Message: fmt.Sprintf("Snapshot %s created", name),
 		Type:    "Normal",
 		Source: corev1.EventSource{
 			Component: "vm-activity-operator",
@@ -363,6 +372,7 @@ func (w *SnapshotWatcher) handleSnapshotDeleted(ctx context.Context, snapshot *u
 			UID:       generateEventUID(eventName),
 			Annotations: map[string]string{
 				"vm-activity.openshift.io/snapshot-name": name,
+				"vm-activity.openshift.io/user":          userInfo.Username,
 			},
 		},
 		InvolvedObject: corev1.ObjectReference{
@@ -372,7 +382,7 @@ func (w *SnapshotWatcher) handleSnapshotDeleted(ctx context.Context, snapshot *u
 			APIVersion: "kubevirt.io/v1",
 		},
 		Reason:  "SnapshotDeleted",
-		Message: fmt.Sprintf("Snapshot %s deleted by %s", name, userInfo.Username),
+		Message: fmt.Sprintf("Snapshot %s deleted", name),
 		Type:    "Normal",
 		Source: corev1.EventSource{
 			Component: "vm-activity-operator",

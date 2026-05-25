@@ -105,10 +105,13 @@ func (h *WebhookHandler) processAdmissionRequest(req *admissionv1.AdmissionReque
 		}
 	}
 
-	// Only process VirtualMachine, VirtualMachineInstance, and VirtualMachineSnapshot resources
+	// Only process VirtualMachine, VirtualMachineInstance, VirtualMachineSnapshot, VirtualMachineRestore, VirtualMachineInstanceMigration, and VirtualMachineClone resources
 	if req.Kind.Kind != "VirtualMachine" &&
 	   req.Kind.Kind != "VirtualMachineInstance" &&
-	   req.Kind.Kind != "VirtualMachineSnapshot" {
+	   req.Kind.Kind != "VirtualMachineSnapshot" &&
+	   req.Kind.Kind != "VirtualMachineRestore" &&
+	   req.Kind.Kind != "VirtualMachineInstanceMigration" &&
+	   req.Kind.Kind != "VirtualMachineClone" {
 		// Allow but don't process
 		return &admissionv1.AdmissionResponse{Allowed: true}
 	}

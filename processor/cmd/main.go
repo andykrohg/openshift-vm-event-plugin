@@ -128,6 +128,36 @@ func main() {
 	}()
 	klog.Info("Snapshot watcher started")
 
+	// Start restore watcher
+	restoreWatcher := watcher.NewRestoreWatcher(dynamicClient, processor, userCache)
+	go func() {
+		if err := restoreWatcher.Start(ctx); err != nil {
+			klog.Errorf("Restore watcher error: %v", err)
+			cancel()
+		}
+	}()
+	klog.Info("Restore watcher started")
+
+	// Start migration watcher
+	migrationWatcher := watcher.NewMigrationWatcher(dynamicClient, processor, userCache)
+	go func() {
+		if err := migrationWatcher.Start(ctx); err != nil {
+			klog.Errorf("Migration watcher error: %v", err)
+			cancel()
+		}
+	}()
+	klog.Info("Migration watcher started")
+
+	// Start clone watcher
+	cloneWatcher := watcher.NewCloneWatcher(dynamicClient, processor, userCache)
+	go func() {
+		if err := cloneWatcher.Start(ctx); err != nil {
+			klog.Errorf("Clone watcher error: %v", err)
+			cancel()
+		}
+	}()
+	klog.Info("Clone watcher started")
+
 	// Start API server
 	apiServer, err := api.NewServer(repo, userCache, config.APIPort)
 	if err != nil {

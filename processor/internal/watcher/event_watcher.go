@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -100,7 +101,7 @@ func (w *EventWatcher) handleEvent(ctx context.Context, event *corev1.Event) {
 	}
 
 	// Check if event reason should be filtered
-	if w.shouldFilter(event.Reason) {
+	if w.shouldFilter(event) {
 		klog.V(2).Infof("Filtering event: %s/%s (reason: %s)",
 			event.Namespace, event.Name, event.Reason)
 		return
@@ -117,12 +118,32 @@ func (w *EventWatcher) handleEvent(ctx context.Context, event *corev1.Event) {
 	}
 }
 
-// shouldFilter checks if an event reason should be filtered out
-func (w *EventWatcher) shouldFilter(reason string) bool {
+// shouldFilter checks if an event should be filtered out
+func (w *EventWatcher) shouldFilter(event *corev1.Event) bool {
+	// Check configured filter reasons
 	for _, filterReason := range w.filterReasons {
-		if reason == filterReason {
+		if event.Reason == filterReason {
 			return true
 		}
 	}
+
+	// Filter out "Migrated" events that are actually warnings about migration not being possible
+	// Real migrations have type "Normal" and successful messages
+	// Warnings about why migration can't happen have type "Warning" and contain negative phrases
+	if event.Reason == "Migrated" {
+		if event.Type == "Warning" {
+			// Always filter out warning-type Migrated events - these are just informational
+			// about why a migration can't happen, not actual migration events
+			return true
+		}
+		// Also check message content for common false-positive phrases
+		message := event.Message
+		if strings.Contains(message, "cannot migrate") ||
+			strings.Contains(message, "is not migratable") ||
+			strings.Contains(message, "EvictionStrategy is set but") {
+			return true
+		}
+	}
+
 	return false
 }

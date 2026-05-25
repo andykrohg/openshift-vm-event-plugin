@@ -25,9 +25,19 @@ rules:
     resources: ["virtualmachines", "virtualmachineinstances"]
     verbs: ["get", "list", "watch"]
 
-  # Watch VirtualMachineSnapshots
+  # Watch VirtualMachineSnapshots and VirtualMachineRestores
   - apiGroups: ["snapshot.kubevirt.io"]
-    resources: ["virtualmachinesnapshots"]
+    resources: ["virtualmachinesnapshots", "virtualmachinerestores"]
+    verbs: ["get", "list", "watch"]
+
+  # Watch VirtualMachineInstanceMigrations
+  - apiGroups: ["kubevirt.io"]
+    resources: ["virtualmachineinstancemigrations"]
+    verbs: ["get", "list", "watch"]
+
+  # Watch VirtualMachineClones
+  - apiGroups: ["clone.kubevirt.io"]
+    resources: ["virtualmachineclones"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

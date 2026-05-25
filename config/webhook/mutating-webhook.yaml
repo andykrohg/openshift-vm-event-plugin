@@ -15,15 +15,30 @@ webhooks:
       port: 8443
     # CABundle will be injected by OpenShift via the annotation above
   rules:
-  - operations: ["CREATE", "UPDATE", "DELETE"]
+  - operations: ["CREATE", "UPDATE", "DELETE", "CONNECT"]
     apiGroups: ["kubevirt.io"]
     apiVersions: ["v1"]
-    resources: ["virtualmachines", "virtualmachineinstances"]
+    resources:
+      - "virtualmachines"
+      - "virtualmachines/start"
+      - "virtualmachines/stop"
+      - "virtualmachines/restart"
+      - "virtualmachineinstances"
     scope: "Namespaced"
   - operations: ["CREATE", "DELETE"]
     apiGroups: ["snapshot.kubevirt.io"]
     apiVersions: ["v1beta1", "v1alpha1"]
-    resources: ["virtualmachinesnapshots"]
+    resources: ["virtualmachinesnapshots", "virtualmachinerestores"]
+    scope: "Namespaced"
+  - operations: ["CREATE"]
+    apiGroups: ["kubevirt.io"]
+    apiVersions: ["v1"]
+    resources: ["virtualmachineinstancemigrations"]
+    scope: "Namespaced"
+  - operations: ["CREATE"]
+    apiGroups: ["clone.kubevirt.io"]
+    apiVersions: ["v1alpha1"]
+    resources: ["virtualmachineclones"]
     scope: "Namespaced"
   sideEffects: None
   timeoutSeconds: 5
