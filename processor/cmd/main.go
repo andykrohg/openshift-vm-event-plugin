@@ -108,6 +108,26 @@ func main() {
 	}()
 	klog.Info("Event watcher started")
 
+	// Start VM resource watcher
+	vmWatcher := watcher.NewVMWatcher(dynamicClient, processor, userCache)
+	go func() {
+		if err := vmWatcher.Start(ctx); err != nil {
+			klog.Errorf("VM watcher error: %v", err)
+			cancel()
+		}
+	}()
+	klog.Info("VM resource watcher started")
+
+	// Start snapshot watcher
+	snapshotWatcher := watcher.NewSnapshotWatcher(dynamicClient, processor, userCache)
+	go func() {
+		if err := snapshotWatcher.Start(ctx); err != nil {
+			klog.Errorf("Snapshot watcher error: %v", err)
+			cancel()
+		}
+	}()
+	klog.Info("Snapshot watcher started")
+
 	// Start API server
 	apiServer, err := api.NewServer(repo, userCache, config.APIPort)
 	if err != nil {

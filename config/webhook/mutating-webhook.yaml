@@ -1,0 +1,31 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: vm-events-webhook
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+webhooks:
+- name: vm-events.openshift.io
+  admissionReviewVersions: ["v1"]
+  clientConfig:
+    service:
+      name: vm-events-api
+      namespace: vm-event-operator-system
+      path: /mutate
+      port: 8443
+    # CABundle will be injected by OpenShift via the annotation above
+  rules:
+  - operations: ["CREATE", "UPDATE", "DELETE"]
+    apiGroups: ["kubevirt.io"]
+    apiVersions: ["v1"]
+    resources: ["virtualmachines", "virtualmachineinstances"]
+    scope: "Namespaced"
+  - operations: ["CREATE", "DELETE"]
+    apiGroups: ["snapshot.kubevirt.io"]
+    apiVersions: ["v1beta1", "v1alpha1"]
+    resources: ["virtualmachinesnapshots"]
+    scope: "Namespaced"
+  sideEffects: None
+  timeoutSeconds: 5
+  failurePolicy: Ignore
+  namespaceSelector: {}

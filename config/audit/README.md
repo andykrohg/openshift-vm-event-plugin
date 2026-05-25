@@ -1,10 +1,16 @@
 # Audit Webhook Configuration
 
-This directory contains configuration files for enabling Kubernetes audit logging to capture username information for VM operations.
+> **⚠️ DEPRECATED**: This approach has been replaced by [Admission Webhooks](../webhook/README.md), which work on all Kubernetes/OpenShift platforms including managed services (ROSA HCP, ARO, OSD) without requiring control plane configuration.
+>
+> **Use admission webhooks instead** - they are simpler, more reliable, and platform-agnostic.
+
+This directory contains legacy configuration files for enabling Kubernetes audit logging to capture username information for VM operations.
 
 ## Overview
 
 The audit webhook sends VirtualMachine and VirtualMachineInstance operations (create, update, patch, delete) from the Kubernetes API server to our processor, which caches the username and associates it with corresponding Events.
+
+**Why this is deprecated**: Audit webhooks require control plane configuration, which is not available on managed OpenShift platforms. Admission webhooks provide the same functionality without this limitation.
 
 ## Files
 

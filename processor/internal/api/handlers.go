@@ -166,6 +166,195 @@ func (s *Server) handleGetVMEvents(c *gin.Context) {
 	})
 }
 
+// handleGetNamespaceEvents handles GET /api/v1/namespaces/:namespace/events
+func (s *Server) handleGetNamespaceEvents(c *gin.Context) {
+	namespace := c.Param("namespace")
+
+	// Parse query parameters
+	opts := storage.QueryOptions{
+		Namespace: namespace,
+		// VMName is empty - query all VMs in namespace
+		Limit: 100, // default limit
+	}
+
+	// Parse 'since' parameter (e.g., "1h", "24h", "7d")
+	if since := c.Query("since"); since != "" {
+		duration, err := parseDuration(since)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid since parameter: %v", err)})
+			return
+		}
+		sinceTime := time.Now().Add(-duration)
+		opts.Since = &sinceTime
+	}
+
+	// Parse 'severity' parameter
+	if severity := c.Query("severity"); severity != "" {
+		if severity != "normal" && severity != "warning" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "severity must be 'normal' or 'warning'"})
+			return
+		}
+		opts.Severity = severity
+	}
+
+	// Parse 'reason' parameter
+	if reason := c.Query("reason"); reason != "" {
+		opts.Reason = reason
+	}
+
+	// Parse 'limit' parameter
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil || limit < 1 || limit > 1000 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 1000"})
+			return
+		}
+		opts.Limit = limit
+	}
+
+	// Parse 'offset' parameter
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		offset, err := strconv.Atoi(offsetStr)
+		if err != nil || offset < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be >= 0"})
+			return
+		}
+		opts.Offset = offset
+	}
+
+	// Query events
+	events, total, err := s.repository.QueryEvents(c.Request.Context(), opts)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to query events: %v", err)})
+		return
+	}
+
+	// Convert to response format
+	eventResponses := make([]EventResponse, len(events))
+	for i, event := range events {
+		var enrichment map[string]interface{}
+		if event.Enrichment != nil {
+			json.Unmarshal(event.Enrichment, &enrichment)
+		}
+
+		eventResponses[i] = EventResponse{
+			ID:              event.ID,
+			EventUID:        event.EventUID,
+			VMName:          event.VMName,
+			VMNamespace:     event.VMNamespace,
+			EventType:       event.EventType,
+			Reason:          event.Reason,
+			Message:         event.Message,
+			SourceComponent: event.SourceComponent,
+			FirstTimestamp:  event.FirstTimestamp.Format(time.RFC3339),
+			LastTimestamp:   event.LastTimestamp.Format(time.RFC3339),
+			Count:           event.Count,
+			Enrichment:      enrichment,
+			CreatedAt:       event.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	c.JSON(http.StatusOK, EventsListResponse{
+		Events: eventResponses,
+		Total:  total,
+		Limit:  opts.Limit,
+		Offset: opts.Offset,
+	})
+}
+
+// handleGetClusterEvents handles GET /api/v1/events
+func (s *Server) handleGetClusterEvents(c *gin.Context) {
+	// Parse query parameters
+	opts := storage.QueryOptions{
+		// Both Namespace and VMName are empty - query all events cluster-wide
+		Limit: 100, // default limit
+	}
+
+	// Parse 'since' parameter (e.g., "1h", "24h", "7d")
+	if since := c.Query("since"); since != "" {
+		duration, err := parseDuration(since)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid since parameter: %v", err)})
+			return
+		}
+		sinceTime := time.Now().Add(-duration)
+		opts.Since = &sinceTime
+	}
+
+	// Parse 'severity' parameter
+	if severity := c.Query("severity"); severity != "" {
+		if severity != "normal" && severity != "warning" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "severity must be 'normal' or 'warning'"})
+			return
+		}
+		opts.Severity = severity
+	}
+
+	// Parse 'reason' parameter
+	if reason := c.Query("reason"); reason != "" {
+		opts.Reason = reason
+	}
+
+	// Parse 'limit' parameter
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil || limit < 1 || limit > 1000 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 1000"})
+			return
+		}
+		opts.Limit = limit
+	}
+
+	// Parse 'offset' parameter
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		offset, err := strconv.Atoi(offsetStr)
+		if err != nil || offset < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be >= 0"})
+			return
+		}
+		opts.Offset = offset
+	}
+
+	// Query events
+	events, total, err := s.repository.QueryEvents(c.Request.Context(), opts)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to query events: %v", err)})
+		return
+	}
+
+	// Convert to response format
+	eventResponses := make([]EventResponse, len(events))
+	for i, event := range events {
+		var enrichment map[string]interface{}
+		if event.Enrichment != nil {
+			json.Unmarshal(event.Enrichment, &enrichment)
+		}
+
+		eventResponses[i] = EventResponse{
+			ID:              event.ID,
+			EventUID:        event.EventUID,
+			VMName:          event.VMName,
+			VMNamespace:     event.VMNamespace,
+			EventType:       event.EventType,
+			Reason:          event.Reason,
+			Message:         event.Message,
+			SourceComponent: event.SourceComponent,
+			FirstTimestamp:  event.FirstTimestamp.Format(time.RFC3339),
+			LastTimestamp:   event.LastTimestamp.Format(time.RFC3339),
+			Count:           event.Count,
+			Enrichment:      enrichment,
+			CreatedAt:       event.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	c.JSON(http.StatusOK, EventsListResponse{
+		Events: eventResponses,
+		Total:  total,
+		Limit:  opts.Limit,
+		Offset: opts.Offset,
+	})
+}
+
 // handleExportEvents handles GET /api/v1/events/export
 func (s *Server) handleExportEvents(c *gin.Context) {
 	format := c.DefaultQuery("format", "json")

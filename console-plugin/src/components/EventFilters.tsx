@@ -71,10 +71,17 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
             onChange={handleEventTypeChange}
           >
             <FormSelectOption key="all" value="all" label="All events" />
-            <FormSelectOption key="Started" value="Started" label="Started" />
-            <FormSelectOption key="Stopped" value="Stopped" label="Stopped" />
-            <FormSelectOption key="ShuttingDown" value="ShuttingDown" label="Shutting down" />
-            <FormSelectOption key="Migrated" value="Migrated" label="Migrated" />
+            <FormSelectOption key="VMCreated" value="VMCreated" label="VM Created" />
+            <FormSelectOption key="VMUpdated" value="VMUpdated" label="VM Updated" />
+            <FormSelectOption key="VMDeleted" value="VMDeleted" label="VM Deleted" />
+            <FormSelectOption key="Started" value="Started" label="VM Started" />
+            <FormSelectOption key="Stopped" value="Stopped" label="VM Stopped" />
+            <FormSelectOption key="ShuttingDown" value="ShuttingDown" label="VM Shutting down" />
+            <FormSelectOption key="Migrated" value="Migrated" label="VM Migrated" />
+            <FormSelectOption key="SnapshotCreated" value="SnapshotCreated" label="Snapshot Created" />
+            <FormSelectOption key="SnapshotReady" value="SnapshotReady" label="Snapshot Ready" />
+            <FormSelectOption key="SnapshotFailed" value="SnapshotFailed" label="Snapshot Failed" />
+            <FormSelectOption key="SnapshotDeleted" value="SnapshotDeleted" label="Snapshot Deleted" />
             <FormSelectOption key="FailedSync" value="FailedSync" label="Failed sync" />
           </FormSelect>
         </FormGroup>

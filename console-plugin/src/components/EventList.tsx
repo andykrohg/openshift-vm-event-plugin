@@ -105,16 +105,56 @@ const EventItem: React.FC<{ event: VMEvent }> = ({ event }) => {
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
-                  {event.enrichment && Object.keys(event.enrichment).length > 0 && (
+                  {event.enrichment?.user && (
                     <DescriptionListGroup>
-                      <DescriptionListTerm>Additional context</DescriptionListTerm>
+                      <DescriptionListTerm>User</DescriptionListTerm>
                       <DescriptionListDescription>
-                        <pre style={{ fontSize: '12px', margin: 0 }}>
-                          {JSON.stringify(event.enrichment, null, 2)}
-                        </pre>
+                        {event.enrichment.user}
                       </DescriptionListDescription>
                     </DescriptionListGroup>
                   )}
+
+                  {event.enrichment?.snapshotName && (
+                    <DescriptionListGroup>
+                      <DescriptionListTerm>Snapshot</DescriptionListTerm>
+                      <DescriptionListDescription>
+                        {event.enrichment.snapshotName}
+                      </DescriptionListDescription>
+                    </DescriptionListGroup>
+                  )}
+
+                  {event.enrichment?.patch && (() => {
+                    try {
+                      const patch = JSON.parse(event.enrichment.patch);
+                      return (
+                        <DescriptionListGroup>
+                          <DescriptionListTerm>Configuration changes</DescriptionListTerm>
+                          <DescriptionListDescription>
+                            <pre style={{ fontSize: '12px', margin: 0, whiteSpace: 'pre-wrap' }}>
+                              {JSON.stringify(patch, null, 2)}
+                            </pre>
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                      );
+                    } catch (e) {
+                      return null;
+                    }
+                  })()}
+
+                  {event.enrichment && (() => {
+                    // Remove user, patch, and snapshotName fields since they have dedicated fields
+                    const { user, userGroup, patch, snapshotName, ...otherEnrichment } = event.enrichment;
+                    return Object.keys(otherEnrichment).length > 0 ? (
+                      <DescriptionListGroup>
+                        <DescriptionListTerm>Additional context</DescriptionListTerm>
+                        <DescriptionListDescription>
+                          <pre style={{ fontSize: '12px', margin: 0 }}>
+                            {JSON.stringify(otherEnrichment, null, 2)}
+                          </pre>
+                        </DescriptionListDescription>
+                      </DescriptionListGroup>
+                    ) : null;
+                  })()}
                 </DescriptionList>
               </ExpandableSection>
             </DataListCell>,

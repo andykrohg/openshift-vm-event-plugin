@@ -33,9 +33,10 @@ make deploy IMG=quay.io/youruser/vm-event-processor:latest CONSOLE_IMG=quay.io/y
 That's it! This will deploy:
 - Namespace (`vm-event-operator-system`)
 - PostgreSQL database
-- VM Event Processor application
-- API service
+- VM Event Processor application (with admission webhook)
+- API service (HTTPS on port 8443)
 - Console plugin
+- Admission webhook configuration
 - Retention CronJob
 
 ### 2. Verify Installation
@@ -47,11 +48,14 @@ kubectl get pods -n vm-event-operator-system
 # Expected output:
 # NAME                                  READY   STATUS    RESTARTS   AGE
 # vm-event-db-0                         1/1     Running   0          2m
-# vm-event-processor-xxxxx              1/1     Running   0          2m
+# vm-event-processor-xxxxx              2/2     Running   0          2m  (processor + nginx sidecar)
 # vm-events-plugin-xxxxx                1/1     Running   0          2m
 
 # Check the processor logs
-kubectl logs -n vm-event-operator-system deployment/vm-event-processor
+kubectl logs -n vm-event-operator-system deployment/vm-event-processor -c processor
+
+# Verify admission webhook is configured
+kubectl get mutatingwebhookconfiguration vm-events-webhook
 ```
 
 ### 3. Enable Console Plugin
@@ -177,13 +181,22 @@ kubectl apply -f config/samples/retention-cronjob.yaml
 
 ```bash
 # Port-forward to the API service
-kubectl port-forward -n vm-event-operator-system svc/vm-events-api 8080:8080
+kubectl port-forward -n vm-event-operator-system svc/vm-events-api 8443:8443
 
-# Query events (in another terminal)
-curl http://localhost:8080/api/v1/namespaces/default/virtualmachines/my-vm/events?since=24h
+# Query events for a specific VM
+curl -sk https://localhost:8443/api/v1/namespaces/default/virtualmachines/my-vm/events?since=24h
+
+# Query all events in a namespace
+curl -sk https://localhost:8443/api/v1/namespaces/default/events?since=24h
+
+# Query cluster-wide events  
+curl -sk https://localhost:8443/api/v1/events?since=1h&severity=warning
+
+# Filter by event type (VMCreated, VMUpdated, SnapshotCreated, etc.)
+curl -sk https://localhost:8443/api/v1/events?reason=VMCreated
 
 # Export events
-curl "http://localhost:8080/api/v1/events/export?format=csv&namespace=default" > events.csv
+curl -sk "https://localhost:8443/api/v1/events/export?format=csv&namespace=default" > events.csv
 ```
 
 ## Troubleshooting

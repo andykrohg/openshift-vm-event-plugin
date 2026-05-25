@@ -70,10 +70,10 @@ type UserInfo struct {
 	Timestamp time.Time
 }
 
-// UserCache caches user information from audit events
+// UserCache caches user information from admission webhook
 type UserCache struct {
 	mu    sync.RWMutex
-	cache map[string]*UserInfo // key: namespace/name
+	cache map[string]*UserInfo // key: kind/namespace/name
 }
 
 // NewUserCache creates a new user cache
@@ -88,12 +88,12 @@ func NewUserCache() *UserCache {
 	return cache
 }
 
-// Set stores user information for a VM
-func (c *UserCache) Set(namespace, name, username, uid string, groups []string) {
+// Set stores user information for a VM or VMI
+func (c *UserCache) Set(kind, namespace, name, username, uid string, groups []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	key := namespace + "/" + name
+	key := kind + "/" + namespace + "/" + name
 	c.cache[key] = &UserInfo{
 		Username:  username,
 		UID:       uid,
@@ -102,12 +102,12 @@ func (c *UserCache) Set(namespace, name, username, uid string, groups []string) 
 	}
 }
 
-// Get retrieves user information for a VM
-func (c *UserCache) Get(namespace, name string) *UserInfo {
+// Get retrieves user information for a VM or VMI
+func (c *UserCache) Get(kind, namespace, name string) *UserInfo {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	key := namespace + "/" + name
+	key := kind + "/" + namespace + "/" + name
 	return c.cache[key]
 }
 
@@ -195,8 +195,15 @@ func (h *WebhookHandler) processAuditEvent(event *AuditEvent) {
 		return
 	}
 
+	// Convert resource name to Kind
+	kind := "VirtualMachine"
+	if event.ObjectRef.Resource == "virtualmachineinstances" {
+		kind = "VirtualMachineInstance"
+	}
+
 	// Cache the user information
 	h.userCache.Set(
+		kind,
 		event.ObjectRef.Namespace,
 		event.ObjectRef.Name,
 		event.User.Username,
@@ -206,7 +213,7 @@ func (h *WebhookHandler) processAuditEvent(event *AuditEvent) {
 
 	klog.Infof("Cached user %s for %s/%s/%s (verb: %s)",
 		event.User.Username,
-		event.ObjectRef.Resource,
+		kind,
 		event.ObjectRef.Namespace,
 		event.ObjectRef.Name,
 		event.Verb)

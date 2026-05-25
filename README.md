@@ -5,8 +5,11 @@ Extended event history for OpenShift Virtualization VMs with a rich console UI.
 ## Features
 
 - **Long-term event retention**: Store VM events for 30+ days (configurable)
+- **Synthetic event generation**: Capture VM lifecycle events (create, update, delete) and snapshot operations
+- **User attribution**: Track which user performed each action via admission webhook
 - **Event aggregation**: Reduce noise by aggregating duplicate events
-- **Event enrichment**: Add context like user, node, and related resources
+- **Event enrichment**: Add context like user, node, configuration patches, and related resources
+- **Multi-scope views**: View events per-VM, per-namespace, or cluster-wide
 - **Rich console UI**: Timeline view with filtering, search, and export capabilities
 - **PostgreSQL storage**: Scalable storage for millions of events
 - **Flexible database options**: Simple StatefulSet (default), HA cluster, or bring your own database
@@ -14,9 +17,12 @@ Extended event history for OpenShift Virtualization VMs with a rich console UI.
 
 ## Architecture
 
-- **Event Processor** (Go) - Watches VirtualMachine/VirtualMachineInstance events and stores them in PostgreSQL
+- **Event Processor** (Go) - Watches VirtualMachine/VirtualMachineInstance/VirtualMachineSnapshot resources and Kubernetes Events, stores them in PostgreSQL
+  - Admission webhook for capturing user context
+  - Resource watchers for generating synthetic lifecycle events
+  - Event aggregator for deduplication and enrichment
 - **PostgreSQL Database** - Configurable storage (simple, HA, or external)
-- **REST API** - Serves events to the console plugin
+- **REST API** - Serves events to the console plugin (per-VM, per-namespace, or cluster-wide)
 - **Console Plugin** (React/TypeScript) - Timeline UI integrated into OpenShift Console
 
 ## Project Structure
@@ -26,10 +32,12 @@ openshift-vm-event-plugin/
 ├── processor/              # Go application
 │   ├── cmd/               # Main entrypoint
 │   ├── internal/          # Application logic
+│   │   ├── admission/    # Admission webhook handler
 │   │   ├── aggregator/   # Event processing
 │   │   ├── api/          # REST API
+│   │   ├── audit/        # User cache
 │   │   ├── storage/      # PostgreSQL repository
-│   │   └── watcher/      # Event watcher
+│   │   └── watcher/      # Resource watchers (VM, VMI, Snapshot)
 │   ├── Dockerfile
 │   ├── Makefile
 │   └── go.mod
@@ -41,6 +49,7 @@ openshift-vm-event-plugin/
     ├── deploy/           # Application deployment
     ├── database/         # PostgreSQL
     ├── console/          # Console plugin
+    ├── webhook/          # Admission webhook
     └── samples/          # Examples
 ```
 
@@ -107,15 +116,29 @@ data:
 ### Querying Events via API
 
 ```bash
-kubectl port-forward -n vm-event-operator-system svc/vm-events-api 8080:8080
+# Port-forward to the API service
+kubectl port-forward -n vm-event-operator-system svc/vm-events-api 8443:8443
 
-curl http://localhost:8080/api/v1/namespaces/default/virtualmachines/my-vm/events?since=24h
+# Query events for a specific VM
+curl -sk https://localhost:8443/api/v1/namespaces/default/virtualmachines/my-vm/events?since=24h
+
+# Query all events in a namespace
+curl -sk https://localhost:8443/api/v1/namespaces/default/events?since=24h
+
+# Query cluster-wide events
+curl -sk https://localhost:8443/api/v1/events?since=1h&severity=warning
+```
+
+Filter by event type:
+```bash
+curl -sk https://localhost:8443/api/v1/events?reason=VMCreated
+curl -sk https://localhost:8443/api/v1/events?reason=SnapshotFailed
 ```
 
 Export events:
 
 ```bash
-curl "http://localhost:8080/api/v1/events/export?format=csv&namespace=default" > events.csv
+curl -sk "https://localhost:8443/api/v1/events/export?format=csv&namespace=default" > events.csv
 ```
 
 ## Development

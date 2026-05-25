@@ -89,3 +89,23 @@ export async function exportEvents(
   document.body.removeChild(a);
   window.URL.revokeObjectURL(downloadUrl);
 }
+
+// Generic fetch helper for API calls
+export async function fetchJSON<T = any>(path: string): Promise<T> {
+  const url = path.startsWith('/api/proxy')
+    ? path
+    : `/api/proxy/plugin/vm-events-plugin/vm-events${path}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${response.statusText}`);
+  }
+
+  return response.json();
+}

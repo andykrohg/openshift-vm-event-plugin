@@ -24,16 +24,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/admission"
 	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/audit"
 	"github.com/andykrohg/openshift-vm-event-plugin/processor/internal/storage"
 )
 
 // Server represents the HTTP API server
 type Server struct {
-	repository     *storage.Repository
-	auditHandler   *audit.WebhookHandler
-	router         *gin.Engine
-	httpServer     *http.Server
+	repository        *storage.Repository
+	admissionHandler  *admission.WebhookHandler
+	router            *gin.Engine
+	httpServer        *http.Server
 }
 
 // NewServer creates a new API server
@@ -44,9 +45,9 @@ func NewServer(repository *storage.Repository, userCache *audit.UserCache, port 
 	router.Use(corsMiddleware())
 
 	server := &Server{
-		repository:   repository,
-		auditHandler: audit.NewWebhookHandler(userCache),
-		router:       router,
+		repository:       repository,
+		admissionHandler: admission.NewWebhookHandler(userCache),
+		router:           router,
 		httpServer: &http.Server{
 			Addr:         ":8080",
 			Handler:      router,
@@ -68,18 +69,20 @@ func (s *Server) setupRoutes() {
 		// Health check
 		api.GET("/health", s.handleHealth)
 
-		// Audit webhook endpoint
-		api.POST("/audit", s.handleAudit)
-
 		// VM events endpoints
 		api.GET("/namespaces/:namespace/virtualmachines/:name/events", s.authMiddleware(), s.handleGetVMEvents)
+		api.GET("/namespaces/:namespace/events", s.authMiddleware(), s.handleGetNamespaceEvents)
+		api.GET("/events", s.authMiddleware(), s.handleGetClusterEvents)
 		api.GET("/events/export", s.authMiddleware(), s.handleExportEvents)
 	}
+
+	// Admission webhook endpoint (separate from /api/v1 group)
+	s.router.POST("/mutate", s.handleAdmission)
 }
 
-// handleAudit wraps the audit webhook handler for Gin
-func (s *Server) handleAudit(c *gin.Context) {
-	s.auditHandler.ServeHTTP(c.Writer, c.Request)
+// handleAdmission wraps the admission webhook handler for Gin
+func (s *Server) handleAdmission(c *gin.Context) {
+	s.admissionHandler.ServeHTTP(c.Writer, c.Request)
 }
 
 // corsMiddleware adds CORS headers

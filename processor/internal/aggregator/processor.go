@@ -107,6 +107,8 @@ func NewEventProcessor(repo *storage.Repository, dynamicClient dynamic.Interface
 func (p *EventProcessor) ProcessEvent(ctx context.Context, event *corev1.Event) error {
 	select {
 	case p.eventQueue <- event:
+		klog.V(2).Infof("Queued event: %s (reason: %s, kind: %s)",
+			event.Name, event.Reason, event.InvolvedObject.Kind)
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -193,6 +195,17 @@ func (p *EventProcessor) generateDeduplicationKey(event *corev1.Event) string {
 func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{} {
 	enrichment := make(map[string]interface{})
 
+	// Extract patch information from annotations (for VMUpdated events)
+	if event.Annotations != nil {
+		if patch, ok := event.Annotations["vm-events.openshift.io/patch"]; ok && patch != "" {
+			// Store the raw patch JSON
+			enrichment["patch"] = patch
+		}
+		if snapshotName, ok := event.Annotations["vm-events.openshift.io/snapshot-name"]; ok && snapshotName != "" {
+			enrichment["snapshotName"] = snapshotName
+		}
+	}
+
 	// Extract annotations if present
 	if event.InvolvedObject.UID != "" {
 		enrichment["involvedObjectUID"] = string(event.InvolvedObject.UID)
@@ -230,14 +243,37 @@ func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{}
 func (p *EventProcessor) fetchVMMetadata(event *corev1.Event) map[string]string {
 	result := make(map[string]string)
 
-	// Only fetch for VirtualMachine events
-	if event.InvolvedObject.Kind != "VirtualMachine" {
+	// Only fetch for VirtualMachine and VirtualMachineInstance events
+	if event.InvolvedObject.Kind != "VirtualMachine" && event.InvolvedObject.Kind != "VirtualMachineInstance" {
 		return result
 	}
 
-	// First, check the audit cache for user information
+	// First, check the admission webhook cache for user information
+	// Cache only contains human users (service accounts are not cached)
 	if p.userCache != nil {
-		if userInfo := p.userCache.Get(event.InvolvedObject.Namespace, event.InvolvedObject.Name); userInfo != nil {
+		var userInfo *audit.UserInfo
+
+		// For VMI events, try the VM cache first (since VMI name usually matches VM name)
+		if event.InvolvedObject.Kind == "VirtualMachineInstance" {
+			// Check VM cache for the parent VM's user
+			userInfo = p.userCache.Get("VirtualMachine", event.InvolvedObject.Namespace, event.InvolvedObject.Name)
+			if userInfo != nil {
+				klog.V(2).Infof("Found VM user %s for VMI %s/%s",
+					userInfo.Username, event.InvolvedObject.Namespace, event.InvolvedObject.Name)
+			}
+		}
+
+		// If not found yet, check cache for this specific resource type
+		if userInfo == nil {
+			userInfo = p.userCache.Get(event.InvolvedObject.Kind, event.InvolvedObject.Namespace, event.InvolvedObject.Name)
+			if userInfo != nil {
+				klog.V(2).Infof("Found cached user %s for %s %s/%s",
+					userInfo.Username, event.InvolvedObject.Kind, event.InvolvedObject.Namespace, event.InvolvedObject.Name)
+			}
+		}
+
+		// If we found a user, add it to enrichment
+		if userInfo != nil {
 			result["user"] = userInfo.Username
 			if len(userInfo.Groups) > 0 {
 				// Store first non-system group as a hint about user type
@@ -248,25 +284,32 @@ func (p *EventProcessor) fetchVMMetadata(event *corev1.Event) map[string]string 
 					}
 				}
 			}
-			klog.V(2).Infof("Found cached user %s for VM %s/%s",
-				userInfo.Username, event.InvolvedObject.Namespace, event.InvolvedObject.Name)
 		}
 	}
 
-	// Define VirtualMachine GVR
-	vmGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachines",
+	// Define GVR based on resource type
+	var gvr schema.GroupVersionResource
+	if event.InvolvedObject.Kind == "VirtualMachineInstance" {
+		gvr = schema.GroupVersionResource{
+			Group:    "kubevirt.io",
+			Version:  "v1",
+			Resource: "virtualmachineinstances",
+		}
+	} else {
+		gvr = schema.GroupVersionResource{
+			Group:    "kubevirt.io",
+			Version:  "v1",
+			Resource: "virtualmachines",
+		}
 	}
 
-	// Fetch the VM object
-	vm, err := p.dynamicClient.Resource(vmGVR).
+	// Fetch the resource object
+	vm, err := p.dynamicClient.Resource(gvr).
 		Namespace(event.InvolvedObject.Namespace).
 		Get(context.Background(), event.InvolvedObject.Name, metav1.GetOptions{})
 	if err != nil {
-		klog.V(2).Infof("Failed to fetch VM %s/%s for metadata enrichment: %v",
-			event.InvolvedObject.Namespace, event.InvolvedObject.Name, err)
+		klog.V(2).Infof("Failed to fetch %s %s/%s for metadata enrichment: %v",
+			event.InvolvedObject.Kind, event.InvolvedObject.Namespace, event.InvolvedObject.Name, err)
 		return result
 	}
 

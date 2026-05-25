@@ -24,6 +24,11 @@ rules:
   - apiGroups: ["kubevirt.io"]
     resources: ["virtualmachines", "virtualmachineinstances"]
     verbs: ["get", "list", "watch"]
+
+  # Watch VirtualMachineSnapshots
+  - apiGroups: ["snapshot.kubevirt.io"]
+    resources: ["virtualmachinesnapshots"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
