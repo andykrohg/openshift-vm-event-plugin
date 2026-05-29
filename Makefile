@@ -4,7 +4,7 @@
 CONTAINER_TOOL ?= $(shell command -v podman 2>/dev/null || echo docker)
 
 # Image registry and tag
-REGISTRY ?= quay.io
+REGISTRY ?= quay.io/andy_krohg
 PROCESSOR_IMAGE_NAME ?= vm-activity-processor
 CONSOLE_IMAGE_NAME ?= vm-activity-plugin
 IMAGE_TAG ?= latest

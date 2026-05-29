@@ -18,6 +18,7 @@ package admission
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -116,11 +117,10 @@ func (h *WebhookHandler) processAdmissionRequest(req *admissionv1.AdmissionReque
 		return &admissionv1.AdmissionResponse{Allowed: true}
 	}
 
-	// Only process create, update, delete, and patch operations
+	// Only process create, update, delete operations
 	if req.Operation != admissionv1.Create &&
 		req.Operation != admissionv1.Update &&
-		req.Operation != admissionv1.Delete &&
-		req.Operation != admissionv1.Connect {
+		req.Operation != admissionv1.Delete {
 		// Allow but don't process
 		return &admissionv1.AdmissionResponse{Allowed: true}
 	}
@@ -137,9 +137,14 @@ func (h *WebhookHandler) processAdmissionRequest(req *admissionv1.AdmissionReque
 			req.UserInfo.Groups,
 		)
 
-		klog.Infof("Cached user %s for %s/%s/%s (operation: %s)",
+		subresourceInfo := ""
+		if req.SubResource != "" {
+			subresourceInfo = fmt.Sprintf("/%s", req.SubResource)
+		}
+		klog.Infof("Cached user %s for %s%s/%s/%s (operation: %s)",
 			req.UserInfo.Username,
 			req.Kind.Kind,
+			subresourceInfo,
 			req.Namespace,
 			req.Name,
 			req.Operation)

@@ -234,10 +234,21 @@ func (p *EventProcessor) enrichEvent(event *corev1.Event) map[string]interface{}
 	}
 
 	// Fetch VM metadata for additional context (only if user not already set from annotations)
+	// Skip for events we know are subresource operations that webhooks can't capture
 	if _, hasUser := enrichment["user"]; !hasUser {
-		if vmInfo := p.fetchVMMetadata(event); len(vmInfo) > 0 {
-			for k, v := range vmInfo {
-				enrichment[k] = v
+		// Don't use cached user for subresource operations (start/stop/restart)
+		// These are executed via virtctl and webhooks can't intercept them,
+		// so the cached user would be from a previous operation (potentially wrong person)
+		isSubresourceEvent := event.Reason == "Started" ||
+			event.Reason == "Stopped" ||
+			event.Reason == "Restarted" ||
+			event.Reason == "ShuttingDown"
+
+		if !isSubresourceEvent {
+			if vmInfo := p.fetchVMMetadata(event); len(vmInfo) > 0 {
+				for k, v := range vmInfo {
+					enrichment[k] = v
+				}
 			}
 		}
 	}
